@@ -1,9 +1,7 @@
-﻿using System.Runtime.Remoting.Contexts;
-using Nito.AsyncEx;
-
-namespace ConsoleApplication16
+﻿namespace ConsoleApplication16
 {
     using System;
+    using System.Collections.Concurrent;
     using System.Collections.Generic;
     using System.Collections.Specialized;
     using System.Diagnostics;
@@ -11,6 +9,9 @@ namespace ConsoleApplication16
     using System.IO;
     using System.Linq;
     using System.Linq.Expressions;
+    using System.Net;
+    using System.Reflection;
+    using System.Reflection.Emit;
     using System.Text;
     using System.Threading;
     using System.Threading.Tasks;
@@ -18,18 +19,16 @@ namespace ConsoleApplication16
     using com.fasterxml.aalto;
     using com.fasterxml.aalto.stax;
     using ikvm.extensions;
-    using java.util.jar;
     using javax.xml.stream;
+    using Nito.AsyncEx;
     using Wintellect;
     using Wintellect.PowerCollections;
-    using System.Net;
-    using System.Reflection;
-    using System.Reflection.Emit;
-    using System.Collections.Concurrent;
 
-    internal class Program
+    class Program
     {
-        private static void Main(string[] args)
+        static readonly Encoding Utf8 = Encoding.UTF8;
+
+        static void Main(string[] args)
         {
             Process.GetCurrentProcess().PriorityClass = ProcessPriorityClass.High;
             Thread.CurrentThread.Priority = ThreadPriority.Highest;
@@ -38,20 +37,20 @@ namespace ConsoleApplication16
 
             //MeasureExpressionCachingBenefits();
 
-            //MeasureBufferPoolBenefits();
+            MeasureBufferPoolBenefits.Run();
 
             //MeasureXmlReaders();
 
             //MeasureTupleVsKeyValuePairInDictionaryLookup();
 
             //MeasureHeaderCollectionTypes();
-            
+
             //MeasureLowerInvariantVsIgnoreCaseComparison();
 
             //MeasureDifferentAllocationSizeTime();
 
             //MeasureAsyncVsContinueWith();
-            
+
             //MeasureFastReflectionPaths();
 
             //MeasureMaybeClassVsStruct();
@@ -66,22 +65,16 @@ namespace ConsoleApplication16
 
             //MeasureStringBuilderVsStringFormat();
 
-            MeasureHMHVsPipeline();
+            //MeasureHMHVsPipeline();
 
+            //MeasureGzippedStringSetSize.Run();
+
+            //MeasureExpressionCreationTime.Run();
 
             Console.ReadLine();
         }
 
-        private class MeasureHPContext
-        {
-            public int Value { get; set; }
-        }
-
-        private delegate Task<int> Adelegate(MeasureHPContext context);
-
-        private delegate Task Bdelegate(MeasureHPContext context);
-        
-        private static long MeasureHMHVsPipeline()
+        static long MeasureHMHVsPipeline()
         {
             const int iterations = 1000;
             long ran = 0;
@@ -132,8 +125,8 @@ namespace ConsoleApplication16
                     }
                 });
 
-            Bdelegate[] pipeline = { lastFuncB, b1, b2 };
-            
+            Bdelegate[] pipeline = {lastFuncB, b1, b2};
+
             CodeTimer.TimeAsync(
                 true,
                 "Iterated async",
@@ -155,7 +148,7 @@ namespace ConsoleApplication16
             return ran;
         }
 
-        private static long MeasureStringBuilderVsStringFormat()
+        static long MeasureStringBuilderVsStringFormat()
         {
             const int iterations = 1000000;
 
@@ -169,10 +162,7 @@ namespace ConsoleApplication16
                 true,
                 "string.Format()",
                 iterations,
-                () =>
-                {
-                    ran += string.Format("daily/{0}/apis/{1}/operations/{2}/test", x.First, x.Second, x.Third).Length;
-                });
+                () => { ran += string.Format("daily/{0}/apis/{1}/operations/{2}/test", x.First, x.Second, x.Third).Length; });
 
             CodeTimer.Time(
                 true,
@@ -180,7 +170,9 @@ namespace ConsoleApplication16
                 iterations,
                 () =>
                 {
-                    ran += string.Format("daily/{0}/apis/{1}/operations/{2}/test", x.First.toString(), x.Second.toString(), x.Third.toString()).Length;
+                    ran +=
+                        string.Format("daily/{0}/apis/{1}/operations/{2}/test", x.First.toString(), x.Second.toString(), x.Third.toString())
+                            .Length;
                 });
 
             CodeTimer.Time(
@@ -188,25 +180,25 @@ namespace ConsoleApplication16
                 "StringBuilder",
                 iterations,
                 () =>
-                    {
-                        var sb = new StringBuilder()
-                            .Append("daily/")
-                            .Append(x.First)
-                            .Append("/apis/")
-                            .Append(x.Second)
-                            .Append("/operations/")
-                            .Append(x.Third)
-                            .Append("/test");
+                {
+                    var sb = new StringBuilder()
+                        .Append("daily/")
+                        .Append(x.First)
+                        .Append("/apis/")
+                        .Append(x.Second)
+                        .Append("/operations/")
+                        .Append(x.Third)
+                        .Append("/test");
 
-                        ran += sb.ToString().Length;
-                    });
+                    ran += sb.ToString().Length;
+                });
 
             Console.WriteLine(ran);
 
             return ran;
         }
 
-        private static long MeasurePassingTupleVsClosingOverVariables()
+        static long MeasurePassingTupleVsClosingOverVariables()
         {
             const int iterations = 1000000;
 
@@ -232,7 +224,7 @@ namespace ConsoleApplication16
             Console.WriteLine(ran);
 
             ran = 0;
-            
+
             CodeTimer.Time(
                 true,
                 "function closing over variable",
@@ -249,17 +241,17 @@ namespace ConsoleApplication16
             return ran;
         }
 
-        private static long FuncHost(Func<long> f)
+        static long FuncHost(Func<long> f)
         {
             return f();
         }
 
-        private static long FuncHost(Func<object, long> f, object state)
+        static long FuncHost(Func<object, long> f, object state)
         {
             return f(state);
         }
 
-        private static long MeasureSearchMethods()
+        static long MeasureSearchMethods()
         {
             const int iterations = 1000000;
 
@@ -313,15 +305,15 @@ namespace ConsoleApplication16
             return ran;
         }
 
-        private static long MeasureConcurrentDictionaryVsDictionary()
+        static long MeasureConcurrentDictionaryVsDictionary()
         {
             const int iterations = 10000;
 
             long ran = 0;
 
-            Dictionary<int, string> map = new Dictionary<int, string>();
-            ConcurrentDictionary<int, string> concurrentMap = new ConcurrentDictionary<int, string>();
-            
+            var map = new Dictionary<int, string>();
+            var concurrentMap = new ConcurrentDictionary<int, string>();
+
             for (int i = 0; i < 100; i++)
             {
                 map[i] = i + "1";
@@ -351,32 +343,26 @@ namespace ConsoleApplication16
             return ran;
         }
 
-        private static long MeasureDateTimeFormatDiffCultures()
+        static long MeasureDateTimeFormatDiffCultures()
         {
             const int iterations = 100000;
 
             long ran = 0;
 
             DateTime time = DateTime.UtcNow;
-            
+
             CodeTimer.Time(true, "Current Culture",
                 iterations,
-                () =>
-                    {
-                        ran += time.ToString("R").Length;
-                    });
+                () => { ran += time.ToString("R").Length; });
 
             CodeTimer.Time(true, "Invariant Culture",
                 iterations,
-                () =>
-                {
-                    ran += time.ToString("R", CultureInfo.InvariantCulture).Length;
-                });
+                () => { ran += time.ToString("R", CultureInfo.InvariantCulture).Length; });
 
             return ran;
         }
-        
-        private static long MeasureMaybeClassVsStruct()
+
+        static long MeasureMaybeClassVsStruct()
         {
             const int iterations = 1000000;
 
@@ -391,7 +377,7 @@ namespace ConsoleApplication16
                     ran += mh.D.Month;
                     ran += mh.D2.Month;
                 });
-                                                                          
+
             CodeTimer.Time(true, "MaybeStruct",
                 iterations,
                 () =>
@@ -425,14 +411,14 @@ namespace ConsoleApplication16
             return ran;
         }
 
-        private static long MeasureAsyncVsContinueWith()
+        static long MeasureAsyncVsContinueWith()
         {
             const int iterations = 1000000;
 
             long ran = 0;
 
             Task cachedTask = Task.FromResult(0);
-            
+
             CodeTimer.TimeAsync(true, "Empty Async",
                 iterations,
                 () => cachedTask);
@@ -451,11 +437,8 @@ namespace ConsoleApplication16
                 {
                     ran += 1;
                     return MeasureAsyncVsContinueWith_TaskSource()
-                        .ContinueWith(t =>
-                        {
-                            ran += t.Result;
-                        },
-                        TaskContinuationOptions.OnlyOnRanToCompletion);
+                        .ContinueWith(t => { ran += t.Result; },
+                            TaskContinuationOptions.OnlyOnRanToCompletion);
                 });
 
 
@@ -471,39 +454,37 @@ namespace ConsoleApplication16
             return ran;
         }
 
-        private static async Task<int> MeasureAsyncVsContinueWith_TaskSource()
+        static async Task<int> MeasureAsyncVsContinueWith_TaskSource()
         {
             await Task.Yield();
             return 1;
         }
 
-        delegate void AddHeaderDelegate(WebHeaderCollection collection, string headerName, string headerValue);
-
-        private static long MeasureFastReflectionPaths()
+        static long MeasureFastReflectionPaths()
         {
             const int iterations = 1000000;
 
             long ran = 0;
 
             var sourceMethod = typeof(WebHeaderCollection).GetMethod("AddInternal", BindingFlags.NonPublic | BindingFlags.Instance);
-            
-            var @delegate = (AddHeaderDelegate)Delegate.CreateDelegate(typeof(AddHeaderDelegate), sourceMethod);
-            
+
+            var @delegate = (AddHeaderDelegate) Delegate.CreateDelegate(typeof(AddHeaderDelegate), sourceMethod);
+
             var instanceExpression = Expression.Parameter(typeof(WebHeaderCollection));
             var nameParamExpression = Expression.Parameter(typeof(string));
             var valueParamExpression = Expression.Parameter(typeof(string));
 
             var methodCallExpression = Expression.Call(instanceExpression, sourceMethod, nameParamExpression, valueParamExpression);
             var lambda = Expression.Lambda<AddHeaderDelegate>(methodCallExpression, new[]
-                {
-                    instanceExpression, nameParamExpression, valueParamExpression
-                });
+            {
+                instanceExpression, nameParamExpression, valueParamExpression
+            });
             var expression = lambda.Compile();
 
             var method = new DynamicMethod(
                 "",
                 null,
-                new[] { typeof(WebHeaderCollection), typeof(string), typeof(string) },
+                new[] {typeof(WebHeaderCollection), typeof(string), typeof(string)},
                 typeof(Program),
                 true);
             var ilGenerator = method.GetILGenerator();
@@ -513,9 +494,9 @@ namespace ConsoleApplication16
             ilGenerator.Emit(OpCodes.Callvirt, sourceMethod);
             ilGenerator.Emit(OpCodes.Ret);
 
-            var dynamicDelegate = (AddHeaderDelegate)method.CreateDelegate(typeof(AddHeaderDelegate));
+            var dynamicDelegate = (AddHeaderDelegate) method.CreateDelegate(typeof(AddHeaderDelegate));
 
-            WebHeaderCollection whc = new WebHeaderCollection();
+            var whc = new WebHeaderCollection();
             CodeTimer.Time(true, "delegate",
                 iterations,
                 () =>
@@ -558,7 +539,7 @@ namespace ConsoleApplication16
             return ran;
         }
 
-        private static long MeasureDifferentAllocationSizeTime()
+        static long MeasureDifferentAllocationSizeTime()
         {
             const int iterations = 100000000;
 
@@ -568,7 +549,7 @@ namespace ConsoleApplication16
                 iterations,
                 () =>
                 {
-                    List<int> l = new List<int>(16);
+                    var l = new List<int>(16);
                     ran += l.Count;
                 });
 
@@ -576,14 +557,14 @@ namespace ConsoleApplication16
                 iterations,
                 () =>
                 {
-                    List<int> l = new List<int>(12);
+                    var l = new List<int>(12);
                     ran += l.Count;
                 });
 
             return ran;
         }
 
-        private static long MeasureLowerInvariantVsIgnoreCaseComparison()
+        static long MeasureLowerInvariantVsIgnoreCaseComparison()
         {
             const int iterations = 10000;
 
@@ -621,24 +602,28 @@ namespace ConsoleApplication16
             return ran;
         }
 
-        private static long MeasureHeaderCollectionTypes()
+        static long MeasureHeaderCollectionTypes()
         {
             const int iterations = 1000000;
-            
+
             long ran = 0;
 
-            var headers = new[] { "Connection", "Content-Type", "Host", "Accept-Encoding", "Accept", "Accept-Charset", "Vary", "Cache-Control", "Expires", "Date", "X-Apiphany-Developer-Key" };
-            NameValueCollection nameValueCollection = new NameValueCollection(headers.Length, StringComparer.OrdinalIgnoreCase);
+            var headers = new[]
+            {
+                "Connection", "Content-Type", "Host", "Accept-Encoding", "Accept", "Accept-Charset", "Vary", "Cache-Control", "Expires", "Date",
+                "X-Apiphany-Developer-Key"
+            };
+            var nameValueCollection = new NameValueCollection(headers.Length, StringComparer.OrdinalIgnoreCase);
             var tupleList = new List<Tuple<string, object>>(headers.Length);
             var headerDictionary = new Dictionary<string, List<string>>(headers.Length, StringComparer.OrdinalIgnoreCase);
             var pairList = new List<Pair<string, object>>(headers.Length);
-            
+
             for (int i = 0; i < headers.Length; i++)
             {
                 nameValueCollection.Add(headers[i], headers[i] + "123");
                 tupleList.Add(new Tuple<string, object>(headers[i], headers[i] + "123"));
                 pairList.Add(new Pair<string, object>(headers[i], headers[i] + "123"));
-                headerDictionary.Add(headers[i], new List<string>(new[] { headers[i] + "123" }));
+                headerDictionary.Add(headers[i], new List<string>(new[] {headers[i] + "123"}));
             }
 
             CodeTimer.Time(true, "NameValueCollection lookup",
@@ -679,7 +664,7 @@ namespace ConsoleApplication16
                     {
                         var tuple = tupleList[i];
                         ran += tuple.Item1.Length;
-                        string value = tuple.Item2 as string;
+                        var value = tuple.Item2 as string;
                         if (value != null)
                             ran += 1;
                         var values = tuple.Item2 as string[];
@@ -699,14 +684,10 @@ namespace ConsoleApplication16
                 {
                     var keys = headerDictionary["X-Apiphany-Developer-Key"];
                     if (keys != null && keys.Count > 0)
-                    {
                         ran += keys[0].Length;
-                    }
-                    var dates= headerDictionary["Date"];
+                    var dates = headerDictionary["Date"];
                     if (dates != null && dates.Count > 0)
-                    {
                         ran += dates[0].Length;
-                    }
                     foreach (var pair in headerDictionary)
                     {
                         ran += pair.Key.Length;
@@ -735,7 +716,7 @@ namespace ConsoleApplication16
                     {
                         var tuple = pairList[i];
                         ran += tuple.First.Length;
-                        string value = tuple.Second as string;
+                        var value = tuple.Second as string;
                         if (value != null)
                             ran += 1;
                         var values = tuple.Second as string[];
@@ -749,11 +730,11 @@ namespace ConsoleApplication16
                     }
                 });
 
-            
+
             return ran;
         }
 
-        private static string FindKey(List<Tuple<string, object>> list, string headerName)
+        static string FindKey(List<Tuple<string, object>> list, string headerName)
         {
             StringComparer comparer = StringComparer.OrdinalIgnoreCase;
             string key = null;
@@ -771,7 +752,7 @@ namespace ConsoleApplication16
             return key;
         }
 
-        private static string FindKey(List<Pair<string, object>> list, string headerName)
+        static string FindKey(List<Pair<string, object>> list, string headerName)
         {
             StringComparer comparer = StringComparer.OrdinalIgnoreCase;
             string key = null;
@@ -782,14 +763,14 @@ namespace ConsoleApplication16
                 var tuple = list[i];
                 if (comparer.Equals(headerName, tuple.First))
                 {
-                    key = (string)tuple.Second;
+                    key = (string) tuple.Second;
                     break;
                 }
             }
             return key;
         }
 
-        private static int MeasureTupleVsKeyValuePairInDictionaryLookup()
+        static int MeasureTupleVsKeyValuePairInDictionaryLookup()
         {
             const int iterations = 1000000;
 
@@ -841,7 +822,7 @@ namespace ConsoleApplication16
             return ran;
         }
 
-        private static void MeasureXmlReaders()
+        static void MeasureXmlReaders()
         {
             const int iterations = 1000;
 
@@ -934,7 +915,7 @@ namespace ConsoleApplication16
             Console.WriteLine(ran);
         }
 
-        private static int ParseWithXmlReader(Stream ms, int i)
+        static int ParseWithXmlReader(Stream ms, int i)
         {
             using (var reader = XmlReader.Create(ms))
             {
@@ -954,7 +935,7 @@ namespace ConsoleApplication16
             return i;
         }
 
-        private static int ParseWithSmallParser(Stream ms, int i)
+        static int ParseWithSmallParser(Stream ms, int i)
         {
             var parser = new SmallXmlParser();
             var reader = new StreamReader(ms, Utf8);
@@ -963,9 +944,183 @@ namespace ConsoleApplication16
             return i + handler.Counted;
         }
 
-        private class SmallContentHandler : SmallXmlParser.IContentHandler
+        static int AaltoRun(Stream ms, int i)
         {
-            private int _counted;
+            var factory = new InputFactoryImpl();
+            var reader = factory.createAsyncXMLStreamReader();
+            var buffer = new byte[64 * 1024];
+            int token;
+            do
+            {
+                token = reader.next();
+                while (token == AsyncXMLStreamReader.__Fields.EVENT_INCOMPLETE)
+                {
+                    token = NextToken(reader, ms, buffer);
+                }
+                switch (token)
+                {
+                    case XMLStreamConstants.__Fields.START_ELEMENT:
+                        i += reader.getLocalName().Length;
+                        int attrCount = reader.getAttributeCount();
+                        for (int ai = 0; ai < attrCount; ai++)
+                        {
+                            string attributeValue = reader.getAttributeValue(ai);
+                            i += attributeValue.Length;
+                        }
+                        break;
+                    case XMLStreamConstants.__Fields.CHARACTERS:
+                        var sb = new StringBuilder();
+                        while (reader.getEventType() == XMLStreamConstants.__Fields.CHARACTERS)
+                        {
+                            string currentText = reader.getText();
+                            sb.Append(currentText);
+                            NextToken(reader, ms, buffer);
+                        }
+                        i += sb.ToString().Length;
+                        break;
+                }
+            } while (token != XMLStreamConstants.__Fields.END_DOCUMENT);
+            return i;
+        }
+
+        public static int NextToken(AsyncXMLStreamReader reader, Stream sourceStream, byte[] buffer)
+        {
+            int token;
+
+            while ((token = reader.next()) == AsyncXMLStreamReader.__Fields.EVENT_INCOMPLETE)
+            {
+                AsyncInputFeeder feeder = reader.getInputFeeder();
+                if (!feeder.needMoreInput())
+                    throw new Exception("Got EVENT_INCOMPLETE, could not feed more input");
+                int read = sourceStream.Read(buffer, 0, buffer.Length);
+                if (read == 0)
+                    feeder.endOfInput();
+                else
+                    feeder.feedInput(buffer, 0, read);
+            }
+            return token;
+        }
+
+        static async Task<int> AaltoRunAsync(Stream ms, int i)
+        {
+            var factory = new InputFactoryImpl();
+            var reader = factory.createAsyncXMLStreamReader();
+            var buffer = new byte[64 * 1024];
+            int token;
+            do
+            {
+                token = reader.next();
+                while (token == AsyncXMLStreamReader.__Fields.EVENT_INCOMPLETE)
+                {
+                    token = await NextTokenAsync(reader, ms, buffer).ConfigureAwait(false);
+                }
+                switch (token)
+                {
+                    case XMLStreamConstants.__Fields.START_ELEMENT:
+                        i += reader.getLocalName().Length;
+                        int attrCount = reader.getAttributeCount();
+                        for (int ai = 0; ai < attrCount; ai++)
+                        {
+                            string attributeValue = reader.getAttributeValue(ai);
+                            i += attributeValue.Length;
+                        }
+                        break;
+                    case XMLStreamConstants.__Fields.CHARACTERS:
+                        var sb = new StringBuilder();
+                        while (reader.getEventType() == XMLStreamConstants.__Fields.CHARACTERS)
+                        {
+                            string currentText = reader.getText();
+                            sb.Append(currentText);
+                            await NextTokenAsync(reader, ms, buffer).ConfigureAwait(false);
+                        }
+                        i += sb.ToString().Length;
+                        break;
+                }
+            } while (token != XMLStreamConstants.__Fields.END_DOCUMENT);
+            return i;
+        }
+
+        public static async Task<int> NextTokenAsync(AsyncXMLStreamReader reader, Stream sourceStream, byte[] buffer)
+        {
+            int token;
+
+            while ((token = reader.next()) == AsyncXMLStreamReader.__Fields.EVENT_INCOMPLETE)
+            {
+                AsyncInputFeeder feeder = reader.getInputFeeder();
+                if (!feeder.needMoreInput())
+                    throw new Exception("Got EVENT_INCOMPLETE, could not feed more input");
+                int read = sourceStream.Read(buffer, 0, buffer.Length);
+                if (read == 0)
+                    feeder.endOfInput();
+                else
+                    feeder.feedInput(buffer, 0, read);
+            }
+            return token;
+        }
+
+        static async Task<int> ReadXmlAsync(XmlReader reader)
+        {
+            int i = 0;
+            //Task<bool> t = reader.ReadAsync();
+            //while ((t.IsCompleted && t.Result) || (await t.ConfigureAwait(false)))
+            while ((await reader.ReadAsync().ConfigureAwait(false)))
+            {
+                switch (reader.NodeType)
+                {
+                    case XmlNodeType.Element:
+                        i += reader.LocalName.Length;
+                        break;
+                    case XmlNodeType.Attribute:
+                        i += (await reader.GetValueAsync().ConfigureAwait(false)).Length;
+                        //Task<string> tva = reader.GetValueAsync();
+                        //i += tva.IsCompleted ? tva.Result.Length : (await tva.ConfigureAwait(false)).Length;
+                        break;
+                }
+                //t = reader.ReadAsync();
+            }
+            return i;
+        }
+
+        static void MeasureExpressionCachingBenefits()
+        {
+            const int iterations = 1000;
+
+            IQueryable<TestClass> seq = Enumerable.Range(1, 100).Select(x => new TestClass
+            {
+                A = x % 2 == 0,
+                B = x * 2,
+                C = x.ToString()
+            }).AsQueryable();
+
+            IQueryable<string> found = null;
+            CodeTimer.Time("create expressions each time",
+                iterations,
+                () => { found = seq.Where(x => x.B > 20 && x.A).Select(x => x.C); });
+
+            Expression<Func<TestClass, bool>> whereClause = x => x.B > 20 && x.A;
+            Expression<Func<TestClass, string>> selectClause = x => x.C;
+
+            CodeTimer.Time("create expressions each time",
+                iterations,
+                () => { found = seq.Where(whereClause).Select(selectClause); });
+
+            Console.WriteLine(found);
+        }
+
+        delegate void AddHeaderDelegate(WebHeaderCollection collection, string headerName, string headerValue);
+
+        delegate Task<int> Adelegate(MeasureHPContext context);
+
+        delegate Task Bdelegate(MeasureHPContext context);
+
+        class MeasureHPContext
+        {
+            public int Value { get; set; }
+        }
+
+        class SmallContentHandler : SmallXmlParser.IContentHandler
+        {
+            int _counted;
 
             public SmallContentHandler()
             {
@@ -1011,309 +1166,11 @@ namespace ConsoleApplication16
             }
         }
 
-        private static int AaltoRun(Stream ms, int i)
-        {
-            var factory = new InputFactoryImpl();
-            var reader = factory.createAsyncXMLStreamReader();
-            byte[] buffer = new byte[64 * 1024];
-            int token;
-            do
-            {
-                token = reader.next();
-                while (token == AsyncXMLStreamReader.__Fields.EVENT_INCOMPLETE)
-                {
-                    token = NextToken(reader, ms, buffer);
-                }
-                switch (token)
-                {
-                    case XMLStreamConstants.__Fields.START_ELEMENT:
-                        i += reader.getLocalName().Length;
-                        int attrCount = reader.getAttributeCount();
-                        for (int ai = 0; ai < attrCount; ai++)
-                        {
-                            string attributeValue = reader.getAttributeValue(ai);
-                            i += attributeValue.Length;
-                        }
-                        break;
-                    case XMLStreamConstants.__Fields.CHARACTERS:
-                        StringBuilder sb = new StringBuilder();
-                        while (reader.getEventType() == XMLStreamConstants.__Fields.CHARACTERS)
-                        {
-                            string currentText = reader.getText();
-                            sb.Append(currentText);
-                            NextToken(reader, ms, buffer);
-                        }
-                        i += sb.ToString().Length;
-                        break;
-                }
-            } while (token != XMLStreamConstants.__Fields.END_DOCUMENT);
-            return i;
-        }
-
-        public static int NextToken(AsyncXMLStreamReader reader, Stream sourceStream, byte[] buffer)
-        {
-            int token;
-
-            while ((token = reader.next()) == AsyncXMLStreamReader.__Fields.EVENT_INCOMPLETE)
-            {
-                AsyncInputFeeder feeder = reader.getInputFeeder();
-                if (!feeder.needMoreInput())
-                    throw new Exception("Got EVENT_INCOMPLETE, could not feed more input");
-                int read = sourceStream.Read(buffer, 0, buffer.Length);
-                if (read == 0)
-                    feeder.endOfInput();
-                else
-                    feeder.feedInput(buffer, 0, read);
-            }
-            return token;
-        }
-
-        private static async Task<int> AaltoRunAsync(Stream ms, int i)
-        {
-            var factory = new InputFactoryImpl();
-            var reader = factory.createAsyncXMLStreamReader();
-            byte[] buffer = new byte[64 * 1024];
-            int token;
-            do
-            {
-                token = reader.next();
-                while (token == AsyncXMLStreamReader.__Fields.EVENT_INCOMPLETE)
-                {
-                    token = await NextTokenAsync(reader, ms, buffer).ConfigureAwait(false);
-                }
-                switch (token)
-                {
-                    case XMLStreamConstants.__Fields.START_ELEMENT:
-                        i += reader.getLocalName().Length;
-                        int attrCount = reader.getAttributeCount();
-                        for (int ai = 0; ai < attrCount; ai++)
-                        {
-                            string attributeValue = reader.getAttributeValue(ai);
-                            i += attributeValue.Length;
-                        }
-                        break;
-                    case XMLStreamConstants.__Fields.CHARACTERS:
-                        StringBuilder sb = new StringBuilder();
-                        while (reader.getEventType() == XMLStreamConstants.__Fields.CHARACTERS)
-                        {
-                            string currentText = reader.getText();
-                            sb.Append(currentText);
-                            await NextTokenAsync(reader, ms, buffer).ConfigureAwait(false);
-                        }
-                        i += sb.ToString().Length;
-                        break;
-                }
-            } while (token != XMLStreamConstants.__Fields.END_DOCUMENT);
-            return i;
-        }
-
-        public static async Task<int> NextTokenAsync(AsyncXMLStreamReader reader, Stream sourceStream, byte[] buffer)
-        {
-            int token;
-
-            while ((token = reader.next()) == AsyncXMLStreamReader.__Fields.EVENT_INCOMPLETE)
-            {
-                AsyncInputFeeder feeder = reader.getInputFeeder();
-                if (!feeder.needMoreInput())
-                    throw new Exception("Got EVENT_INCOMPLETE, could not feed more input");
-                int read = sourceStream.Read(buffer, 0, buffer.Length);
-                if (read == 0)
-                    feeder.endOfInput();
-                else
-                    feeder.feedInput(buffer, 0, read);
-            }
-            return token;
-        }
-
-        private static async Task<int> ReadXmlAsync(XmlReader reader)
-        {
-            int i = 0;
-            //Task<bool> t = reader.ReadAsync();
-            //while ((t.IsCompleted && t.Result) || (await t.ConfigureAwait(false)))
-            while ((await reader.ReadAsync().ConfigureAwait(false)))
-            {
-                switch (reader.NodeType)
-                {
-                    case XmlNodeType.Element:
-                        i += reader.LocalName.Length;
-                        break;
-                    case XmlNodeType.Attribute:
-                        i += (await reader.GetValueAsync().ConfigureAwait(false)).Length;
-                        //Task<string> tva = reader.GetValueAsync();
-                        //i += tva.IsCompleted ? tva.Result.Length : (await tva.ConfigureAwait(false)).Length;
-                        break;
-                }
-                //t = reader.ReadAsync();
-            }
-            return i;
-        }
-
-        private static void MeasureExpressionCachingBenefits()
-        {
-            const int iterations = 1000;
-
-            IQueryable<TestClass> seq = Enumerable.Range(1, 100).Select(x => new TestClass
-            {
-                A = x % 2 == 0,
-                B = x * 2,
-                C = x.ToString()
-            }).AsQueryable();
-
-            IQueryable<string> found = null;
-            CodeTimer.Time("create expressions each time",
-                iterations,
-                () => { found = seq.Where(x => x.B > 20 && x.A).Select(x => x.C); });
-
-            Expression<Func<TestClass, bool>> whereClause = x => x.B > 20 && x.A;
-            Expression<Func<TestClass, string>> selectClause = x => x.C;
-
-            CodeTimer.Time("create expressions each time",
-                iterations,
-                () => { found = seq.Where(whereClause).Select(selectClause); });
-
-            Console.WriteLine(found);
-        }
-
         public class TestClass
         {
             public bool A { get; set; }
             public int B { get; set; }
             public string C { get; set; }
-        }
-
-
-        private static void MeasureBufferPoolBenefits()
-        {
-            const int iterations = 10000;
-            const int bufferSize = 16 * 1024;
-
-            MemoryStream from = new MemoryStream(new byte[100 * 1024]);
-
-            MemoryStream to = new MemoryStream(new byte[100 * 1024]);
-
-            CodeTimer.Time("buffer every time",
-                iterations,
-                () => { @from.CopyTo(to, bufferSize); });
-
-            CodeTimer.Time("buffer every time, self",
-                iterations,
-                () =>
-                {
-                    byte[] buffer = new byte[bufferSize];
-                    int count;
-                    while ((count = @from.Read(buffer, 0, buffer.Length)) != 0)
-                    {
-                        to.Write(buffer, 0, count);
-                    }
-                });
-
-
-            byte[] commonBufferOdd = new byte[bufferSize];
-            byte[] commonBufferEven = new byte[bufferSize];
-            bool odd = true;
-            Func<byte[]> bufferProvider = () =>
-            {
-                odd = !odd;
-                return odd ? commonBufferOdd : commonBufferEven;
-            };
-
-            CodeTimer.Time("buffer pool",
-                iterations,
-                () =>
-                {
-                    byte[] buffer = bufferProvider();
-                    int count;
-                    while ((count = @from.Read(buffer, 0, buffer.Length)) != 0)
-                    {
-                        to.Write(buffer, 0, count);
-                    }
-                });
-
-            CodeTimer.Time("buffer pool creation",
-                1,
-                () =>
-                {
-                    byte[][] pool = new byte[2000][];
-                    for (int i = 0; i < pool.Length; i++)
-                    {
-                        pool[i] = new byte[bufferSize];
-                    }
-                });
-        }
-
-        private static Encoding Utf8 = Encoding.UTF8;
-
-        public static void Run(int iterations, Action action)
-        {
-            for (int i = iterations - 1; i >= 0; i--)
-            {
-                action();
-            }
-        }
-    }
-
-    internal class WrappingStream : Stream
-    {
-        private Stream _stream;
-
-        public WrappingStream(Stream ms)
-        {
-            _stream = ms;
-        }
-
-        public override void Flush()
-        {
-        }
-
-        public override long Seek(long offset, SeekOrigin origin)
-        {
-            return _stream.Seek(offset, origin);
-        }
-
-        public override void SetLength(long value)
-        {
-            throw new NotImplementedException();
-        }
-
-        public override int Read(byte[] buffer, int offset, int count)
-        {
-            return _stream.Read(buffer, offset, count);
-        }
-
-        public override Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
-        {
-            return _stream.ReadAsync(buffer, offset, count, cancellationToken);
-        }
-
-        public override void Write(byte[] buffer, int offset, int count)
-        {
-            throw new NotImplementedException();
-        }
-
-        public override bool CanRead
-        {
-            get { return true; }
-        }
-
-        public override bool CanSeek
-        {
-            get { return false; }
-        }
-
-        public override bool CanWrite
-        {
-            get { return false; }
-        }
-
-        public override long Length
-        {
-            get { throw new NotImplementedException(); }
-        }
-
-        public override long Position
-        {
-            get { throw new NotImplementedException(); }
-            set { throw new NotImplementedException(); }
         }
     }
 }
