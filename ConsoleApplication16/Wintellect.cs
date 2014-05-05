@@ -11,7 +11,6 @@ namespace Wintellect
     using System.Runtime.InteropServices;
     using System.Threading;
     using System.Threading.Tasks;
-    using ikvm.extensions;
     using Microsoft.Win32.SafeHandles;
 
     /// <summary>

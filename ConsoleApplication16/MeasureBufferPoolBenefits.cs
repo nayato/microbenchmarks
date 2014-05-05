@@ -68,6 +68,7 @@
                     }
                     returnBuffer(buffer);
                 });
+            return 0;
         }
     }
 }

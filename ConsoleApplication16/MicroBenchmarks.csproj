@@ -22,7 +22,7 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <Prefer32Bit>false</Prefer32Bit>
     <GenerateSerializationAssemblies>Auto</GenerateSerializationAssemblies>
     <CheckForOverflowUnderflow>true</CheckForOverflowUnderflow>
@@ -91,6 +91,9 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\packages\WindowsAzure.Storage.3.0.2.0\lib\net40\Microsoft.WindowsAzure.Storage.dll</HintPath>
     </Reference>
+    <Reference Include="MurmurHash">
+      <HintPath>..\packages\murmurhash.1.0.0\lib\net45\MurmurHash.dll</HintPath>
+    </Reference>
     <Reference Include="Newtonsoft.Json">
       <HintPath>..\packages\Newtonsoft.Json.5.0.6\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
@@ -129,6 +132,7 @@
     <Compile Include="MaybeLazyTests.cs" />
     <Compile Include="MaybeStruct.cs" />
     <Compile Include="MeasureBufferPoolBenefits.cs" />
+    <Compile Include="MeasureHashPerformance.cs" />
     <Compile Include="MeasureExpressionCreationTime.cs" />
     <Compile Include="MeasureGzippedStringSetSize.cs" />
     <Compile Include="Program.cs" />
@@ -136,6 +140,7 @@
     <Compile Include="SmallXmlParser.cs" />
     <Compile Include="StreamReaderImpl.cs" />
     <Compile Include="StructTuple.cs" />
+    <Compile Include="SubString.cs" />
     <Compile Include="Wintellect.cs" />
     <Compile Include="WrappingStream.cs" />
     <Compile Include="XMLLightweightParser.cs" />

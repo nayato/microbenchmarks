@@ -16,10 +16,6 @@
     using System.Threading;
     using System.Threading.Tasks;
     using System.Xml;
-    using com.fasterxml.aalto;
-    using com.fasterxml.aalto.stax;
-    using ikvm.extensions;
-    using javax.xml.stream;
     using Nito.AsyncEx;
     using Wintellect;
     using Wintellect.PowerCollections;
@@ -37,7 +33,7 @@
 
             //MeasureExpressionCachingBenefits();
 
-            MeasureBufferPoolBenefits.Run();
+            //MeasureBufferPoolBenefits.Run();
 
             //MeasureXmlReaders();
 
@@ -70,6 +66,8 @@
             //MeasureGzippedStringSetSize.Run();
 
             //MeasureExpressionCreationTime.Run();
+
+            MeasureHashPerformance.Run();
 
             Console.ReadLine();
         }
@@ -171,7 +169,7 @@
                 () =>
                 {
                     ran +=
-                        string.Format("daily/{0}/apis/{1}/operations/{2}/test", x.First.toString(), x.Second.toString(), x.Third.toString())
+                        string.Format("daily/{0}/apis/{1}/operations/{2}/test", x.First.ToString(CultureInfo.InvariantCulture), x.Second.ToString(CultureInfo.InvariantCulture), x.Third.ToString(CultureInfo.InvariantCulture))
                             .Length;
                 });
 
@@ -866,35 +864,35 @@
                     ms.Seek(0, SeekOrigin.Begin);
                 });
 
-            ran += AaltoRun(ms, ran);
-            ms.Seek(0, SeekOrigin.Begin);
+            //ran += AaltoRun(ms, ran);
+            //ms.Seek(0, SeekOrigin.Begin);
 
-            CodeTimer.Time(true, "aalto xml reader",
-                iterations,
-                () =>
-                {
-                    int i = 0;
+            //CodeTimer.Time(true, "aalto xml reader",
+            //    iterations,
+            //    () =>
+            //    {
+            //        int i = 0;
 
-                    i = AaltoRun(ms, i);
+            //        i = AaltoRun(ms, i);
 
-                    ran = i;
-                    ms.Seek(0, SeekOrigin.Begin);
-                });
+            //        ran = i;
+            //        ms.Seek(0, SeekOrigin.Begin);
+            //    });
 
-            ran += AaltoRunAsync(ms, ran).Result;
-            ms.Seek(0, SeekOrigin.Begin);
+            //ran += AaltoRunAsync(ms, ran).Result;
+            //ms.Seek(0, SeekOrigin.Begin);
 
-            CodeTimer.Time(true, "async aalto xml reader",
-                iterations,
-                () =>
-                {
-                    int i = 0;
+            //CodeTimer.Time(true, "async aalto xml reader",
+            //    iterations,
+            //    () =>
+            //    {
+            //        int i = 0;
 
-                    i = AaltoRunAsync(ms, i).Result;
+            //        i = AaltoRunAsync(ms, i).Result;
 
-                    ran = i;
-                    ms.Seek(0, SeekOrigin.Begin);
-                });
+            //        ran = i;
+            //        ms.Seek(0, SeekOrigin.Begin);
+            //    });
 
 
             //ran += ParseWithSmallParser(ms, ran);
@@ -944,119 +942,119 @@
             return i + handler.Counted;
         }
 
-        static int AaltoRun(Stream ms, int i)
-        {
-            var factory = new InputFactoryImpl();
-            var reader = factory.createAsyncXMLStreamReader();
-            var buffer = new byte[64 * 1024];
-            int token;
-            do
-            {
-                token = reader.next();
-                while (token == AsyncXMLStreamReader.__Fields.EVENT_INCOMPLETE)
-                {
-                    token = NextToken(reader, ms, buffer);
-                }
-                switch (token)
-                {
-                    case XMLStreamConstants.__Fields.START_ELEMENT:
-                        i += reader.getLocalName().Length;
-                        int attrCount = reader.getAttributeCount();
-                        for (int ai = 0; ai < attrCount; ai++)
-                        {
-                            string attributeValue = reader.getAttributeValue(ai);
-                            i += attributeValue.Length;
-                        }
-                        break;
-                    case XMLStreamConstants.__Fields.CHARACTERS:
-                        var sb = new StringBuilder();
-                        while (reader.getEventType() == XMLStreamConstants.__Fields.CHARACTERS)
-                        {
-                            string currentText = reader.getText();
-                            sb.Append(currentText);
-                            NextToken(reader, ms, buffer);
-                        }
-                        i += sb.ToString().Length;
-                        break;
-                }
-            } while (token != XMLStreamConstants.__Fields.END_DOCUMENT);
-            return i;
-        }
+        //static int AaltoRun(Stream ms, int i)
+        //{
+        //    var factory = new InputFactoryImpl();
+        //    var reader = factory.createAsyncXMLStreamReader();
+        //    var buffer = new byte[64 * 1024];
+        //    int token;
+        //    do
+        //    {
+        //        token = reader.next();
+        //        while (token == AsyncXMLStreamReader.__Fields.EVENT_INCOMPLETE)
+        //        {
+        //            token = NextToken(reader, ms, buffer);
+        //        }
+        //        switch (token)
+        //        {
+        //            case XMLStreamConstants.__Fields.START_ELEMENT:
+        //                i += reader.getLocalName().Length;
+        //                int attrCount = reader.getAttributeCount();
+        //                for (int ai = 0; ai < attrCount; ai++)
+        //                {
+        //                    string attributeValue = reader.getAttributeValue(ai);
+        //                    i += attributeValue.Length;
+        //                }
+        //                break;
+        //            case XMLStreamConstants.__Fields.CHARACTERS:
+        //                var sb = new StringBuilder();
+        //                while (reader.getEventType() == XMLStreamConstants.__Fields.CHARACTERS)
+        //                {
+        //                    string currentText = reader.getText();
+        //                    sb.Append(currentText);
+        //                    NextToken(reader, ms, buffer);
+        //                }
+        //                i += sb.ToString().Length;
+        //                break;
+        //        }
+        //    } while (token != XMLStreamConstants.__Fields.END_DOCUMENT);
+        //    return i;
+        //}
 
-        public static int NextToken(AsyncXMLStreamReader reader, Stream sourceStream, byte[] buffer)
-        {
-            int token;
+        //public static int NextToken(AsyncXMLStreamReader reader, Stream sourceStream, byte[] buffer)
+        //{
+        //    int token;
 
-            while ((token = reader.next()) == AsyncXMLStreamReader.__Fields.EVENT_INCOMPLETE)
-            {
-                AsyncInputFeeder feeder = reader.getInputFeeder();
-                if (!feeder.needMoreInput())
-                    throw new Exception("Got EVENT_INCOMPLETE, could not feed more input");
-                int read = sourceStream.Read(buffer, 0, buffer.Length);
-                if (read == 0)
-                    feeder.endOfInput();
-                else
-                    feeder.feedInput(buffer, 0, read);
-            }
-            return token;
-        }
+        //    while ((token = reader.next()) == AsyncXMLStreamReader.__Fields.EVENT_INCOMPLETE)
+        //    {
+        //        AsyncInputFeeder feeder = reader.getInputFeeder();
+        //        if (!feeder.needMoreInput())
+        //            throw new Exception("Got EVENT_INCOMPLETE, could not feed more input");
+        //        int read = sourceStream.Read(buffer, 0, buffer.Length);
+        //        if (read == 0)
+        //            feeder.endOfInput();
+        //        else
+        //            feeder.feedInput(buffer, 0, read);
+        //    }
+        //    return token;
+        //}
 
-        static async Task<int> AaltoRunAsync(Stream ms, int i)
-        {
-            var factory = new InputFactoryImpl();
-            var reader = factory.createAsyncXMLStreamReader();
-            var buffer = new byte[64 * 1024];
-            int token;
-            do
-            {
-                token = reader.next();
-                while (token == AsyncXMLStreamReader.__Fields.EVENT_INCOMPLETE)
-                {
-                    token = await NextTokenAsync(reader, ms, buffer).ConfigureAwait(false);
-                }
-                switch (token)
-                {
-                    case XMLStreamConstants.__Fields.START_ELEMENT:
-                        i += reader.getLocalName().Length;
-                        int attrCount = reader.getAttributeCount();
-                        for (int ai = 0; ai < attrCount; ai++)
-                        {
-                            string attributeValue = reader.getAttributeValue(ai);
-                            i += attributeValue.Length;
-                        }
-                        break;
-                    case XMLStreamConstants.__Fields.CHARACTERS:
-                        var sb = new StringBuilder();
-                        while (reader.getEventType() == XMLStreamConstants.__Fields.CHARACTERS)
-                        {
-                            string currentText = reader.getText();
-                            sb.Append(currentText);
-                            await NextTokenAsync(reader, ms, buffer).ConfigureAwait(false);
-                        }
-                        i += sb.ToString().Length;
-                        break;
-                }
-            } while (token != XMLStreamConstants.__Fields.END_DOCUMENT);
-            return i;
-        }
+        //static async Task<int> AaltoRunAsync(Stream ms, int i)
+        //{
+        //    var factory = new InputFactoryImpl();
+        //    var reader = factory.createAsyncXMLStreamReader();
+        //    var buffer = new byte[64 * 1024];
+        //    int token;
+        //    do
+        //    {
+        //        token = reader.next();
+        //        while (token == AsyncXMLStreamReader.__Fields.EVENT_INCOMPLETE)
+        //        {
+        //            token = await NextTokenAsync(reader, ms, buffer).ConfigureAwait(false);
+        //        }
+        //        switch (token)
+        //        {
+        //            case XMLStreamConstants.__Fields.START_ELEMENT:
+        //                i += reader.getLocalName().Length;
+        //                int attrCount = reader.getAttributeCount();
+        //                for (int ai = 0; ai < attrCount; ai++)
+        //                {
+        //                    string attributeValue = reader.getAttributeValue(ai);
+        //                    i += attributeValue.Length;
+        //                }
+        //                break;
+        //            case XMLStreamConstants.__Fields.CHARACTERS:
+        //                var sb = new StringBuilder();
+        //                while (reader.getEventType() == XMLStreamConstants.__Fields.CHARACTERS)
+        //                {
+        //                    string currentText = reader.getText();
+        //                    sb.Append(currentText);
+        //                    await NextTokenAsync(reader, ms, buffer).ConfigureAwait(false);
+        //                }
+        //                i += sb.ToString().Length;
+        //                break;
+        //        }
+        //    } while (token != XMLStreamConstants.__Fields.END_DOCUMENT);
+        //    return i;
+        //}
 
-        public static async Task<int> NextTokenAsync(AsyncXMLStreamReader reader, Stream sourceStream, byte[] buffer)
-        {
-            int token;
+        //public static async Task<int> NextTokenAsync(AsyncXMLStreamReader reader, Stream sourceStream, byte[] buffer)
+        //{
+        //    int token;
 
-            while ((token = reader.next()) == AsyncXMLStreamReader.__Fields.EVENT_INCOMPLETE)
-            {
-                AsyncInputFeeder feeder = reader.getInputFeeder();
-                if (!feeder.needMoreInput())
-                    throw new Exception("Got EVENT_INCOMPLETE, could not feed more input");
-                int read = sourceStream.Read(buffer, 0, buffer.Length);
-                if (read == 0)
-                    feeder.endOfInput();
-                else
-                    feeder.feedInput(buffer, 0, read);
-            }
-            return token;
-        }
+        //    while ((token = reader.next()) == AsyncXMLStreamReader.__Fields.EVENT_INCOMPLETE)
+        //    {
+        //        AsyncInputFeeder feeder = reader.getInputFeeder();
+        //        if (!feeder.needMoreInput())
+        //            throw new Exception("Got EVENT_INCOMPLETE, could not feed more input");
+        //        int read = sourceStream.Read(buffer, 0, buffer.Length);
+        //        if (read == 0)
+        //            feeder.endOfInput();
+        //        else
+        //            feeder.feedInput(buffer, 0, read);
+        //    }
+        //    return token;
+        //}
 
         static async Task<int> ReadXmlAsync(XmlReader reader)
         {
@@ -1083,7 +1081,7 @@
 
         static void MeasureExpressionCachingBenefits()
         {
-            const int iterations = 1000;
+            const int iterations = 10000;
 
             IQueryable<TestClass> seq = Enumerable.Range(1, 100).Select(x => new TestClass
             {
@@ -1100,7 +1098,7 @@
             Expression<Func<TestClass, bool>> whereClause = x => x.B > 20 && x.A;
             Expression<Func<TestClass, string>> selectClause = x => x.C;
 
-            CodeTimer.Time("create expressions each time",
+            CodeTimer.Time("cache expressions",
                 iterations,
                 () => { found = seq.Where(whereClause).Select(selectClause); });
 
