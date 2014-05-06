@@ -39,6 +39,21 @@ namespace ConsoleApplication16
             return string.Compare(this.source, this.offset, other.source, other.offset, this.length, stringComparison) == 0;
         }
 
+        public int Compare(SubString other, StringComparison stringComparison)
+        {
+            int compareResult = string.Compare(this.source, this.offset, other.source, other.offset, this.length, stringComparison);
+            if (compareResult == 0)
+            {
+                return this.length - other.length;
+            }
+            return compareResult;
+        }
+
+        public int Compare(string other, StringComparison stringComparison)
+        {
+            
+        }
+
         public override int GetHashCode()
         {
             unchecked
