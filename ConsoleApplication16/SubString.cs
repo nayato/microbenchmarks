@@ -51,7 +51,16 @@ namespace ConsoleApplication16
 
         public int Compare(string other, StringComparison stringComparison)
         {
-            
+            throw new NotImplementedException();
+        }
+
+        public int Compare(int index, string other, int indexOther, int length, StringComparison stringComparison)
+        {
+            Contract.Requires(index >= 0 && index < this.length);
+            Contract.Requires(length + index <= this.length);
+            Contract.Requires(length > 0);
+
+            return string.Compare(this.source, this.offset + index, other, indexOther, length, stringComparison);
         }
 
         public override int GetHashCode()
