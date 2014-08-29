@@ -67,7 +67,9 @@
 
             //MeasureExpressionCreationTime.Run();
 
-            MeasureHashPerformance.Run();
+            //MeasureSubstringHashPerformance.Run();
+            
+            MeasureSubstringHashVsCompare.Run();
 
             Console.ReadLine();
         }

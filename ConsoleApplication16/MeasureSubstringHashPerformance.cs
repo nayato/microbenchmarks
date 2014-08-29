@@ -1,18 +1,9 @@
-﻿// --------------------------------------------------------------------------
-//  <copyright file="MeasureExpressionCreationTime - Copy.cs" company="Microsoft">
-//      Copyright (c) Microsoft Corporation. All rights reserved.
-//  </copyright>
-// --------------------------------------------------------------------------
-
-namespace ConsoleApplication16
+﻿namespace ConsoleApplication16
 {
     using System;
-    using System.IO;
-    using System.Text;
-    using Murmur;
     using Wintellect;
 
-    class MeasureHashPerformance
+    class MeasureSubstringHashPerformance
     {
         public static unsafe long Run()
         {
@@ -30,20 +21,38 @@ namespace ConsoleApplication16
 
             //CodeTimer.Time(true, "SubString.GetHashCode()", iterations, () => { subValue.GetHashCode(); });
 
-            SubString subString = new SubString(value, 1, 16);
+            var subString = new SubString(value, 1, 16);
             Console.WriteLine(subString.ToString() + ":" + subString.GetHashCode());
             subString = new SubString(value, 22, 3);
             Console.WriteLine(subString.ToString() + ":" + subString.GetHashCode());
 
             subString = new SubString(value2, 19, 16);
             Console.WriteLine(subString.ToString() + ":" + subString.GetHashCode());
+            Console.WriteLine(subString.ToString() + ":" + subString.GetHashCode2());
             subString = new SubString(value2, 1, 3);
             Console.WriteLine(subString.ToString() + ":" + subString.GetHashCode());
+            Console.WriteLine(subString.ToString() + ":" + subString.GetHashCode2());
+
+            CodeTimer.Time(true, "new SubString().GetHashCode2()", iterations, () =>
+            {
+                new SubString(value, 1, 16).GetHashCode2();
+                new SubString(value, 23, 3).GetHashCode2();
+                new SubString(value, 1, 16).GetHashCode2();
+            });
 
             CodeTimer.Time(true, "new SubString().GetHashCode()", iterations, () =>
             {
                 new SubString(value, 1, 16).GetHashCode();
                 new SubString(value, 23, 3).GetHashCode();
+                new SubString(value, 1, 16).GetHashCode();
+            });
+
+            var ssComparer = new OrdinalIgnoreCaseSubStringComparer();
+            CodeTimer.Time(true, "new SubString().GetCaseInsensitiveHashCode()", iterations, () =>
+            {
+                ssComparer.GetHashCode(new SubString(value, 1, 16));
+                ssComparer.GetHashCode(new SubString(value, 23, 3));
+                ssComparer.GetHashCode(new SubString(value, 1, 16));
             });
 
             CodeTimer.Time(true, "string.Substring().GetHashCode()", iterations, () =>
@@ -52,6 +61,19 @@ namespace ConsoleApplication16
                 substring.GetHashCode();
                 substring = value.Substring(23, 3);
                 substring.GetHashCode();
+                substring = value.Substring(1, 16);
+                substring.GetHashCode();
+            });
+
+            var comparer = StringComparer.OrdinalIgnoreCase;
+            CodeTimer.Time(true, "string.Substring().GetHashCode() insensitive", iterations, () =>
+            {
+                string substring = value.Substring(1, 16);
+                comparer.GetHashCode(substring);
+                substring = value.Substring(23, 3);
+                comparer.GetHashCode(substring);
+                substring = value.Substring(1, 16);
+                comparer.GetHashCode(substring);
             });
 
             return ran;

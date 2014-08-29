@@ -132,7 +132,8 @@
     <Compile Include="MaybeLazyTests.cs" />
     <Compile Include="MaybeStruct.cs" />
     <Compile Include="MeasureBufferPoolBenefits.cs" />
-    <Compile Include="MeasureHashPerformance.cs" />
+    <Compile Include="MeasureSubstringHashVsCompare.cs" />
+    <Compile Include="MeasureSubstringHashPerformance.cs" />
     <Compile Include="MeasureExpressionCreationTime.cs" />
     <Compile Include="MeasureGzippedStringSetSize.cs" />
     <Compile Include="Program.cs" />

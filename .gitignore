@@ -100,3 +100,7 @@ Portals/Portals.Web
 !Portals/Portals.Web/packages.config
 
 ###############################################################################
+/MicroBenchmarks.sln.ide/edb.chk
+/MicroBenchmarks.sln.ide/edbres00001.jrs
+/MicroBenchmarks.sln.ide/edbres00002.jrs
+/MicroBenchmarks.sln.ide/storage.ide

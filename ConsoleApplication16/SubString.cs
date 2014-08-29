@@ -1,14 +1,15 @@
 namespace ConsoleApplication16
 {
     using System;
+    using System.Collections.Generic;
     using System.Diagnostics.Contracts;
     using System.Text;
 
     public struct SubString
     {
-        readonly string source;
+        internal readonly string source;
         readonly int offset;
-        readonly int length;
+        public readonly int length;
 
         public SubString(string source, int offset, int length)
             : this()
@@ -61,6 +62,27 @@ namespace ConsoleApplication16
             Contract.Requires(length > 0);
 
             return string.Compare(this.source, this.offset + index, other, indexOther, length, stringComparison);
+        }
+
+        public unsafe int GetHashCode2()
+        {
+            fixed (char* c = this.source)
+            {
+                char* cc = c;
+                char* end = cc + this.length - 1;
+                int h = 0;
+                for (; cc < end; cc += 2)
+                {
+                    h = (h << 5) - h + *cc;
+                    h = (h << 5) - h + cc[1];
+                }
+                ++end;
+                if (cc < end)
+                {
+                    h = (h << 5) - h + *cc;
+                }
+                return h;
+            }
         }
 
         public override int GetHashCode()
@@ -120,7 +142,7 @@ namespace ConsoleApplication16
 
         public SubString Substring(int startIndex)
         {
-            Contract.Requires(startIndex < length || (length == 0 && startIndex == 0));
+            Contract.Requires(startIndex < this.length || (this.length == 0 && startIndex == 0));
 
             return new SubString(this.source, this.offset + startIndex, this.length - startIndex);
         }
@@ -151,6 +173,51 @@ namespace ConsoleApplication16
         public override string ToString()
         {
             return this.source.Substring(this.offset, this.length);
+        }
+    }
+
+    public class OrdinalIgnoreCaseSubStringComparer : IEqualityComparer<SubString>
+    {
+        public bool Equals(SubString x, SubString y)
+        {
+            return x.Equals(y, StringComparison.OrdinalIgnoreCase);
+        }
+
+        public unsafe int GetHashCode(SubString obj)
+        {
+            fixed (char* c = obj.source)
+            {
+                char* cc = c;
+                char* end = cc + obj.length - 1;
+                int h = 0;
+                for (; cc < end; cc += 2)
+                {
+                    h = (h << 5) - h + ToUpper(*cc);
+                    h = (h << 5) - h + ToUpper(cc[1]);
+                }
+                ++end;
+                if (cc < end)
+                {
+                    h = (h << 5) - h + ToUpper(*cc);
+                }
+                return h;
+            }
+        }
+
+        static char ToUpper(char c)
+        {
+            if (c < 0x80)
+            {
+                if ('a' <= c && c <= 'z')
+                {
+                    c = (Char)(c & ~0x20);
+                }
+            }
+            else
+            {
+                c = Char.ToUpperInvariant(c);
+            }
+            return c;
         }
     }
 }
