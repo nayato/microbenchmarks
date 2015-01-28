@@ -8,7 +8,7 @@
         public static unsafe long Run()
         {
             long ran = 0;
-            const int iterations = 10000000;
+            const int iterations = 10 * 1000 * 1000;
 
             string value = "?subscription-key=345&key=gfql3i4ufgdf3";
             string value2 = "?key=gfql3i4ufgdf3&subscription-key=345";
@@ -28,17 +28,8 @@
 
             subString = new SubString(value2, 19, 16);
             Console.WriteLine(subString.ToString() + ":" + subString.GetHashCode());
-            Console.WriteLine(subString.ToString() + ":" + subString.GetHashCode2());
             subString = new SubString(value2, 1, 3);
             Console.WriteLine(subString.ToString() + ":" + subString.GetHashCode());
-            Console.WriteLine(subString.ToString() + ":" + subString.GetHashCode2());
-
-            CodeTimer.Time(true, "new SubString().GetHashCode2()", iterations, () =>
-            {
-                new SubString(value, 1, 16).GetHashCode2();
-                new SubString(value, 23, 3).GetHashCode2();
-                new SubString(value, 1, 16).GetHashCode2();
-            });
 
             CodeTimer.Time(true, "new SubString().GetHashCode()", iterations, () =>
             {

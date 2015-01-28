@@ -373,7 +373,7 @@ namespace Wintellect
             {
                 ConsoleColor defColor = Console.ForegroundColor;
                 Console.ForegroundColor = ConsoleColor.Yellow;
-                Console.WriteLine("   {0}", this.testText);
+                Console.Write("{0}\t", this.testText);
                 Console.ForegroundColor = defColor;
                 Console.WriteLine("   {0,7:N0}ms {1,11:N0}Kc (G0={2,4}, G1={3,4}, G2={4,4})",
                                   milliseconds,

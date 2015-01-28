@@ -1,29 +1,33 @@
 namespace ConsoleApplication16
 {
     using System;
-    using System.Collections.Generic;
     using System.Diagnostics.Contracts;
     using System.Text;
 
-    public struct SubString
+    public struct SubString : IEquatable<SubString>
     {
-        internal readonly string source;
-        readonly int offset;
-        public readonly int length;
+        internal readonly string Source;
+        internal readonly int Offset;
+        public readonly int Length;
+
+        public SubString(string source)
+            : this(source, 0, source.Length)
+        {
+        }
 
         public SubString(string source, int offset, int length)
             : this()
         {
-            this.offset = offset;
-            this.length = length;
-            this.source = source;
+            this.Offset = offset;
+            this.Length = length;
+            this.Source = source;
         }
 
         public static readonly SubString Empty = new SubString(string.Empty, 0, 0);
 
-        public int Length
+        public char this[int index]
         {
-            get { return this.length; }
+            get { return this.Source[this.Offset + index]; }
         }
 
         public bool Equals(SubString other)
@@ -33,19 +37,19 @@ namespace ConsoleApplication16
 
         public bool Equals(SubString other, StringComparison stringComparison)
         {
-            if (this.length != other.length)
+            if (this.Length != other.Length)
             {
                 return false;
             }
-            return string.Compare(this.source, this.offset, other.source, other.offset, this.length, stringComparison) == 0;
+            return string.Compare(this.Source, this.Offset, other.Source, other.Offset, this.Length, stringComparison) == 0;
         }
 
         public int Compare(SubString other, StringComparison stringComparison)
         {
-            int compareResult = string.Compare(this.source, this.offset, other.source, other.offset, this.length, stringComparison);
+            int compareResult = string.Compare(this.Source, this.Offset, other.Source, other.Offset, this.Length, stringComparison);
             if (compareResult == 0)
             {
-                return this.length - other.length;
+                return this.Length - other.Length;
             }
             return compareResult;
         }
@@ -57,19 +61,19 @@ namespace ConsoleApplication16
 
         public int Compare(int index, string other, int indexOther, int length, StringComparison stringComparison)
         {
-            Contract.Requires(index >= 0 && index < this.length);
-            Contract.Requires(length + index <= this.length);
+            Contract.Requires(index >= 0 && index < this.Length);
+            Contract.Requires(length + index <= this.Length);
             Contract.Requires(length > 0);
 
-            return string.Compare(this.source, this.offset + index, other, indexOther, length, stringComparison);
+            return string.Compare(this.Source, this.Offset + index, other, indexOther, length, stringComparison);
         }
 
-        public unsafe int GetHashCode2()
+        public override unsafe int GetHashCode()
         {
-            fixed (char* c = this.source)
+            fixed (char* c = this.Source)
             {
-                char* cc = c;
-                char* end = cc + this.length - 1;
+                char* cc = c + this.Offset;
+                char* end = cc + this.Length - 1;
                 int h = 0;
                 for (; cc < end; cc += 2)
                 {
@@ -85,52 +89,6 @@ namespace ConsoleApplication16
             }
         }
 
-        public override int GetHashCode()
-        {
-            unchecked
-            {
-                unsafe
-                {
-                    fixed (char* src = this.source)
-                    {
-                        Contract.Assert(src[this.source.Length] == '\0', "src[this.Length] == '\\0'");
-                        Contract.Assert(((int)src) % 4 == 0, "Managed string should start at 4 bytes boundary");
-
-                        int hash1 = 5381;
-                        int hash2 = hash1;
-
-                        int c;
-                        char* s = src + this.offset;
-                        int toRead = this.length;
-                        while (toRead > 1)
-                        {
-                            c = s[0];
-                            if (c == 0)
-                            {
-                                break;
-                            }
-                            hash1 = ((hash1 << 5) + hash1) ^ c;
-                            c = s[1];
-                            if (c == 0)
-                            {
-                                break;
-                            }
-                            hash2 = ((hash2 << 5) + hash2) ^ c;
-                            toRead -= 2;
-                            s += 2;
-                        }
-
-                        if (toRead == 1)
-                        {
-                            c = s[0];
-                            hash1 = ((hash1 << 5) + hash1) ^ c;
-                        }
-                        return hash1 + (hash2 * 1566083941);
-                    }
-                }
-            }
-        }
-
         public override bool Equals(object obj)
         {
             if (ReferenceEquals(null, obj))
@@ -142,9 +100,9 @@ namespace ConsoleApplication16
 
         public SubString Substring(int startIndex)
         {
-            Contract.Requires(startIndex < this.length || (this.length == 0 && startIndex == 0));
+            Contract.Requires(startIndex < this.Length || (this.Length == 0 && startIndex == 0));
 
-            return new SubString(this.source, this.offset + startIndex, this.length - startIndex);
+            return new SubString(this.Source, this.Offset + startIndex, this.Length - startIndex);
         }
 
         public SubString Substring(int startIndex, int count)
@@ -153,71 +111,26 @@ namespace ConsoleApplication16
             {
                 return Empty;
             }
-            return new SubString(this.source, this.offset + startIndex, count);
+            return new SubString(this.Source, this.Offset + startIndex, count);
         }
 
         public int IndexOf(char value, int startIndex, int count)
         {
             Contract.Requires(startIndex >= 0);
             Contract.Requires(count >= 0);
-            Contract.Requires(count <= this.length - startIndex);
+            Contract.Requires(count <= this.Length - startIndex);
 
-            return this.source.IndexOf(value, startIndex + this.offset, count);
+            return this.Source.IndexOf(value, startIndex + this.Offset, count);
         }
 
         void AppendToStringBuilder(StringBuilder stringBuilder)
         {
-            stringBuilder.Append(this.source, this.offset, this.length);
+            stringBuilder.Append(this.Source, this.Offset, this.Length);
         }
 
         public override string ToString()
         {
-            return this.source.Substring(this.offset, this.length);
-        }
-    }
-
-    public class OrdinalIgnoreCaseSubStringComparer : IEqualityComparer<SubString>
-    {
-        public bool Equals(SubString x, SubString y)
-        {
-            return x.Equals(y, StringComparison.OrdinalIgnoreCase);
-        }
-
-        public unsafe int GetHashCode(SubString obj)
-        {
-            fixed (char* c = obj.source)
-            {
-                char* cc = c;
-                char* end = cc + obj.length - 1;
-                int h = 0;
-                for (; cc < end; cc += 2)
-                {
-                    h = (h << 5) - h + ToUpper(*cc);
-                    h = (h << 5) - h + ToUpper(cc[1]);
-                }
-                ++end;
-                if (cc < end)
-                {
-                    h = (h << 5) - h + ToUpper(*cc);
-                }
-                return h;
-            }
-        }
-
-        static char ToUpper(char c)
-        {
-            if (c < 0x80)
-            {
-                if ('a' <= c && c <= 'z')
-                {
-                    c = (Char)(c & ~0x20);
-                }
-            }
-            else
-            {
-                c = Char.ToUpperInvariant(c);
-            }
-            return c;
+            return this.Source.Substring(this.Offset, this.Length);
         }
     }
 }
