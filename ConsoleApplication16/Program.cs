@@ -24,12 +24,12 @@
     {
         static readonly Encoding Utf8 = Encoding.UTF8;
 
-        static void Main(string[] args)
+        static void Main()
         {
             Process.GetCurrentProcess().PriorityClass = ProcessPriorityClass.High;
             Thread.CurrentThread.Priority = ThreadPriority.Highest;
 
-            CodeTimer.Time(String.Empty, 1, () => Thread.Sleep(0));
+            CodeTimer.Time(string.Empty, 1, () => Thread.Sleep(0));
 
             //MeasureExpressionCachingBenefits();
 
@@ -68,10 +68,40 @@
             //MeasureExpressionCreationTime.Run();
 
             //MeasureSubstringHashPerformance.Run();
-            
-            MeasureSubstringHashVsCompare.Run();
 
-            Console.ReadLine();
+            //MeasureSubstringHashVsCompare.Run();
+
+            //MeasureJsonNetVsProtobuf.Run();
+
+            //MeasureStringBuilderVsString.Run();
+
+            //MeasureFixedVsManaged.Run();
+
+            //MeasureRngLongVsGuidLong.Run();
+
+            //MeasureGenericCastHelperAbstractVsFunc.Run();
+
+            //MeasureUriTemplateTableVsRegex.Run();
+
+            //MeasureContinueWithVsAsyncVoid.Run();
+
+            //MeasureContinueWithVsAsyncVoidComplex.Run();
+
+            //new MeasureJsonVerify().Run();
+
+            //new MeasureVolatileVsPlain().Run();
+
+            //new MeasureConditionalWeakTablePattern().Run();
+
+            //MeasureThreadVsXThread.Run();
+
+            //FalseSharing.Run();
+
+            //MeasureAsyncNestedThrowVsTry.Run();
+
+            MeasureTimersVsWheel.Run();
+
+            //Console.ReadLine();
         }
 
         static long MeasureHMHVsPipeline()
@@ -111,7 +141,6 @@
                 return null;
             };
 
-
             CodeTimer.TimeAsync(
                 true,
                 "Chained async",
@@ -125,7 +154,7 @@
                     }
                 });
 
-            Bdelegate[] pipeline = {lastFuncB, b1, b2};
+            Bdelegate[] pipeline = { lastFuncB, b1, b2 };
 
             CodeTimer.TimeAsync(
                 true,
@@ -134,9 +163,9 @@
                 async () =>
                 {
                     var ctx = new MeasureHPContext();
-                    foreach (var d in pipeline)
+                    foreach (Bdelegate d in pipeline)
                     {
-                        var t = d(ctx);
+                        Task t = d(ctx);
                         if (t != null)
                             await t;
                     }
@@ -181,7 +210,7 @@
                 iterations,
                 () =>
                 {
-                    var sb = new StringBuilder()
+                    StringBuilder sb = new StringBuilder()
                         .Append("daily/")
                         .Append(x.First)
                         .Append("/apis/")
@@ -216,7 +245,7 @@
                     b = b - 2;
                     ran += FuncHost(o =>
                     {
-                        var tuple = (Tuple<int, int>) o;
+                        var tuple = (Tuple<int, int>)o;
                         return tuple.Item1 + tuple.Item2 - 1;
                     }, Tuple.Create(a, b));
                 });
@@ -324,7 +353,7 @@
                 iterations,
                 () =>
                 {
-                    foreach (var value in map.Values)
+                    foreach (string value in map.Values)
                     {
                         ran += 1;
                     }
@@ -334,7 +363,7 @@
                 iterations,
                 () =>
                 {
-                    foreach (var value in concurrentMap.Values)
+                    foreach (string value in concurrentMap.Values)
                     {
                         ran += 1;
                     }
@@ -364,7 +393,7 @@
 
         static long MeasureMaybeClassVsStruct()
         {
-            const int iterations = 1000000;
+            const int iterations = 10000000;
 
             long ran = 0;
 
@@ -441,13 +470,12 @@
                             TaskContinuationOptions.OnlyOnRanToCompletion);
                 });
 
-
             CodeTimer.TimeAsync(true, "ContinueWith on Awaiter",
                 iterations,
                 () =>
                 {
                     ran += 1;
-                    var task = MeasureAsyncVsContinueWith_TaskSource();
+                    Task<int> task = MeasureAsyncVsContinueWith_TaskSource();
                     task.GetAwaiter().OnCompleted(() => ran += task.Result);
                     return task;
                 });
@@ -466,35 +494,35 @@
 
             long ran = 0;
 
-            var sourceMethod = typeof(WebHeaderCollection).GetMethod("AddInternal", BindingFlags.NonPublic | BindingFlags.Instance);
+            MethodInfo sourceMethod = typeof(WebHeaderCollection).GetMethod("AddInternal", BindingFlags.NonPublic | BindingFlags.Instance);
 
-            var @delegate = (AddHeaderDelegate) Delegate.CreateDelegate(typeof(AddHeaderDelegate), sourceMethod);
+            var @delegate = (AddHeaderDelegate)Delegate.CreateDelegate(typeof(AddHeaderDelegate), sourceMethod);
 
-            var instanceExpression = Expression.Parameter(typeof(WebHeaderCollection));
-            var nameParamExpression = Expression.Parameter(typeof(string));
-            var valueParamExpression = Expression.Parameter(typeof(string));
+            ParameterExpression instanceExpression = Expression.Parameter(typeof(WebHeaderCollection));
+            ParameterExpression nameParamExpression = Expression.Parameter(typeof(string));
+            ParameterExpression valueParamExpression = Expression.Parameter(typeof(string));
 
-            var methodCallExpression = Expression.Call(instanceExpression, sourceMethod, nameParamExpression, valueParamExpression);
-            var lambda = Expression.Lambda<AddHeaderDelegate>(methodCallExpression, new[]
+            MethodCallExpression methodCallExpression = Expression.Call(instanceExpression, sourceMethod, nameParamExpression, valueParamExpression);
+            Expression<AddHeaderDelegate> lambda = Expression.Lambda<AddHeaderDelegate>(methodCallExpression, new[]
             {
                 instanceExpression, nameParamExpression, valueParamExpression
             });
-            var expression = lambda.Compile();
+            AddHeaderDelegate expression = lambda.Compile();
 
             var method = new DynamicMethod(
                 "",
                 null,
-                new[] {typeof(WebHeaderCollection), typeof(string), typeof(string)},
+                new[] { typeof(WebHeaderCollection), typeof(string), typeof(string) },
                 typeof(Program),
                 true);
-            var ilGenerator = method.GetILGenerator();
+            ILGenerator ilGenerator = method.GetILGenerator();
             ilGenerator.Emit(OpCodes.Ldarg_0);
             ilGenerator.Emit(OpCodes.Ldarg_1);
             ilGenerator.Emit(OpCodes.Ldarg_2);
             ilGenerator.Emit(OpCodes.Callvirt, sourceMethod);
             ilGenerator.Emit(OpCodes.Ret);
 
-            var dynamicDelegate = (AddHeaderDelegate) method.CreateDelegate(typeof(AddHeaderDelegate));
+            var dynamicDelegate = (AddHeaderDelegate)method.CreateDelegate(typeof(AddHeaderDelegate));
 
             var whc = new WebHeaderCollection();
             CodeTimer.Time(true, "delegate",
@@ -623,7 +651,7 @@
                 nameValueCollection.Add(headers[i], headers[i] + "123");
                 tupleList.Add(new Tuple<string, object>(headers[i], headers[i] + "123"));
                 pairList.Add(new Pair<string, object>(headers[i], headers[i] + "123"));
-                headerDictionary.Add(headers[i], new List<string>(new[] {headers[i] + "123"}));
+                headerDictionary.Add(headers[i], new List<string>(new[] { headers[i] + "123" }));
             }
 
             CodeTimer.Time(true, "NameValueCollection lookup",
@@ -639,7 +667,7 @@
                     for (int i = 0; i < nameValueCollection.Count; i++)
                     {
                         ran += nameValueCollection.GetKey(i).Length;
-                        var values = nameValueCollection.GetValues(i);
+                        string[] values = nameValueCollection.GetValues(i);
                         if (values != null)
                         {
                             for (int j = 0; j < values.Length; j++)
@@ -662,9 +690,9 @@
                         ran += date.Length;
                     for (int i = 0; i < tupleList.Count; i++)
                     {
-                        var tuple = tupleList[i];
+                        Tuple<string, object> tuple = tupleList[i];
                         ran += tuple.Item1.Length;
-                        var value = tuple.Item2 as string;
+                        string value = tuple.Item2 as string;
                         if (value != null)
                             ran += 1;
                         var values = tuple.Item2 as string[];
@@ -682,16 +710,16 @@
                 iterations,
                 () =>
                 {
-                    var keys = headerDictionary["X-Apiphany-Developer-Key"];
+                    List<string> keys = headerDictionary["X-Apiphany-Developer-Key"];
                     if (keys != null && keys.Count > 0)
                         ran += keys[0].Length;
-                    var dates = headerDictionary["Date"];
+                    List<string> dates = headerDictionary["Date"];
                     if (dates != null && dates.Count > 0)
                         ran += dates[0].Length;
-                    foreach (var pair in headerDictionary)
+                    foreach (KeyValuePair<string, List<string>> pair in headerDictionary)
                     {
                         ran += pair.Key.Length;
-                        var values = pair.Value;
+                        List<string> values = pair.Value;
                         if (values != null)
                         {
                             for (int j = 0; j < values.Count; j++)
@@ -714,9 +742,9 @@
                         ran += date.Length;
                     for (int i = 0; i < pairList.Count; i++)
                     {
-                        var tuple = pairList[i];
+                        Pair<string, object> tuple = pairList[i];
                         ran += tuple.First.Length;
-                        var value = tuple.Second as string;
+                        string value = tuple.Second as string;
                         if (value != null)
                             ran += 1;
                         var values = tuple.Second as string[];
@@ -730,7 +758,6 @@
                     }
                 });
 
-
             return ran;
         }
 
@@ -742,10 +769,10 @@
             int len = list.Count;
             for (int i = 0; i < len; i++)
             {
-                var tuple = list[i];
+                Tuple<string, object> tuple = list[i];
                 if (comparer.Equals(headerName, tuple.Item1))
                 {
-                    key = (string) tuple.Item2;
+                    key = (string)tuple.Item2;
                     break;
                 }
             }
@@ -760,10 +787,10 @@
             int len = list.Count;
             for (int i = 0; i < len; i++)
             {
-                var tuple = list[i];
+                Pair<string, object> tuple = list[i];
                 if (comparer.Equals(headerName, tuple.First))
                 {
-                    key = (string) tuple.Second;
+                    key = (string)tuple.Second;
                     break;
                 }
             }
@@ -843,7 +870,7 @@
                     ms.Seek(0, SeekOrigin.Begin);
                 });
 
-            var reader1 = XmlReader.Create(ms, new XmlReaderSettings
+            XmlReader reader1 = XmlReader.Create(ms, new XmlReaderSettings
             {
                 Async = true
             });
@@ -855,7 +882,7 @@
                 () =>
                 {
                     int i = 0;
-                    using (var reader = XmlReader.Create(ms, new XmlReaderSettings
+                    using (XmlReader reader = XmlReader.Create(ms, new XmlReaderSettings
                     {
                         Async = true
                     }))
@@ -896,7 +923,6 @@
             //        ms.Seek(0, SeekOrigin.Begin);
             //    });
 
-
             //ran += ParseWithSmallParser(ms, ran);
             //ms.Seek(0, SeekOrigin.Begin);
 
@@ -917,7 +943,7 @@
 
         static int ParseWithXmlReader(Stream ms, int i)
         {
-            using (var reader = XmlReader.Create(ms))
+            using (XmlReader reader = XmlReader.Create(ms))
             {
                 while (reader.Read())
                 {
@@ -1128,7 +1154,7 @@
 
             public int Counted
             {
-                get { return _counted; }
+                get { return this._counted; }
             }
 
             public void OnStartParsing(SmallXmlParser parser)
@@ -1141,10 +1167,10 @@
 
             public void OnStartElement(string name, SmallXmlParser.IAttrList attrs)
             {
-                _counted += name.Length;
+                this._counted += name.Length;
                 for (int i = 0; i < attrs.Length; i++)
                 {
-                    _counted += attrs.GetValue(i).Length;
+                    this._counted += attrs.GetValue(i).Length;
                 }
             }
 
@@ -1158,7 +1184,7 @@
 
             public void OnChars(string text)
             {
-                _counted += text.Length;
+                this._counted += text.Length;
             }
 
             public void OnIgnorableWhitespace(string text)
@@ -1169,7 +1195,9 @@
         public class TestClass
         {
             public bool A { get; set; }
+
             public int B { get; set; }
+
             public string C { get; set; }
         }
     }

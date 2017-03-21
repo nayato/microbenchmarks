@@ -1,36 +1,45 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace ConsoleApplication16
+﻿namespace ConsoleApplication16
 {
+    using System;
     using System.Collections;
+    using System.Collections.Generic;
     using System.Globalization;
     using System.IO;
+    using System.Text;
 
     public class SmallXmlParser
     {
         public interface IContentHandler
         {
             void OnStartParsing(SmallXmlParser parser);
+
             void OnEndParsing(SmallXmlParser parser);
+
             void OnStartElement(string name, IAttrList attrs);
+
             void OnEndElement(string name);
+
             void OnProcessingInstruction(string name, string text);
+
             void OnChars(string text);
+
             void OnIgnorableWhitespace(string text);
         }
 
         public interface IAttrList
         {
             int Length { get; }
+
             bool IsEmpty { get; }
+
             string GetName(int i);
+
             string GetValue(int i);
+
             string GetValue(string name);
+
             string[] Names { get; }
+
             string[] Values { get; }
         }
 
@@ -38,62 +47,68 @@ namespace ConsoleApplication16
         {
             public int Length
             {
-                get { return attrNames.Count; }
-            }
-            public bool IsEmpty
-            {
-                get { return attrNames.Count == 0; }
-            }
-            public string GetName(int i)
-            {
-                return attrNames[i];
-            }
-            public string GetValue(int i)
-            {
-                return attrValues[i];
-            }
-            public string GetValue(string name)
-            {
-                for (int i = 0; i < attrNames.Count; i++)
-                    if (attrNames[i] == name)
-                        return attrValues[i];
-                return null;
-            }
-            public string[] Names
-            {
-                get { return attrNames.ToArray(); }
-            }
-            public string[] Values
-            {
-                get { return attrValues.ToArray(); }
+                get { return this.attrNames.Count; }
             }
 
-            List<string> attrNames = new List<string>();
-            List<string> attrValues = new List<string>();
+            public bool IsEmpty
+            {
+                get { return this.attrNames.Count == 0; }
+            }
+
+            public string GetName(int i)
+            {
+                return this.attrNames[i];
+            }
+
+            public string GetValue(int i)
+            {
+                return this.attrValues[i];
+            }
+
+            public string GetValue(string name)
+            {
+                for (int i = 0; i < this.attrNames.Count; i++)
+                    if (this.attrNames[i] == name)
+                        return this.attrValues[i];
+                return null;
+            }
+
+            public string[] Names
+            {
+                get { return this.attrNames.ToArray(); }
+            }
+
+            public string[] Values
+            {
+                get { return this.attrValues.ToArray(); }
+            }
+
+            readonly List<string> attrNames = new List<string>();
+            readonly List<string> attrValues = new List<string>();
 
             internal void Clear()
             {
-                attrNames.Clear();
-                attrValues.Clear();
+                this.attrNames.Clear();
+                this.attrValues.Clear();
             }
 
             internal void Add(string name, string value)
             {
-                attrNames.Add(name);
-                attrValues.Add(value);
+                this.attrNames.Add(name);
+                this.attrValues.Add(value);
             }
         }
 
         IContentHandler handler;
         TextReader reader;
-        Stack elementNames = new Stack();
-        Stack xmlSpaces = new Stack();
+        readonly Stack elementNames = new Stack();
+        readonly Stack xmlSpaces = new Stack();
         string xmlSpace;
-        StringBuilder buffer = new StringBuilder(200);
+        readonly StringBuilder buffer = new StringBuilder(200);
         char[] nameBuffer = new char[30];
         bool isWhitespace;
 
-        AttrListImpl attributes = new AttrListImpl();
+        readonly AttrListImpl attributes = new AttrListImpl();
         int line = 1, column;
         bool resetColumn;
 
@@ -101,21 +116,20 @@ namespace ConsoleApplication16
         {
         }
 
-        private Exception Error(string msg)
+        Exception Error(string msg)
         {
-            return new SmallXmlParserException(msg, line, column);
+            return new SmallXmlParserException(msg, this.line, this.column);
         }
 
-        private Exception UnexpectedEndError()
+        Exception UnexpectedEndError()
         {
-            string[] arr = new string[elementNames.Count];
-            elementNames.CopyTo(arr, 0);
-            return Error(String.Format(
-                "Unexpected end of stream. Element stack content is {0}", String.Join(",", arr)));
+            var arr = new string[this.elementNames.Count];
+            this.elementNames.CopyTo(arr, 0);
+            return this.Error(string.Format(
+                "Unexpected end of stream. Element stack content is {0}", string.Join(",", arr)));
         }
 
-
-        private bool IsNameChar(char c, bool start)
+        bool IsNameChar(char c, bool start)
         {
             switch (c)
             {
@@ -127,7 +141,8 @@ namespace ConsoleApplication16
                     return !start;
             }
             if (c > 0x100)
-            { // optional condition for optimization
+            {
+                // optional condition for optimization
                 switch (c)
                 {
                     case '\u0559':
@@ -138,7 +153,7 @@ namespace ConsoleApplication16
                 if ('\u02BB' <= c && c <= '\u02C1')
                     return true;
             }
-            switch (Char.GetUnicodeCategory(c))
+            switch (char.GetUnicodeCategory(c))
             {
                 case UnicodeCategory.LowercaseLetter:
                 case UnicodeCategory.UppercaseLetter:
@@ -157,7 +172,7 @@ namespace ConsoleApplication16
             }
         }
 
-        private bool IsWhitespace(int c)
+        bool IsWhitespace(int c)
         {
             switch (c)
             {
@@ -171,115 +186,112 @@ namespace ConsoleApplication16
             }
         }
 
-
         public void SkipWhitespaces()
         {
-            SkipWhitespaces(false);
+            this.SkipWhitespaces(false);
         }
 
-        private void HandleWhitespaces()
+        void HandleWhitespaces()
         {
-            while (IsWhitespace(Peek()))
-                buffer.Append((char)Read());
-            if (Peek() != '<' && Peek() >= 0)
-                isWhitespace = false;
+            while (this.IsWhitespace(this.Peek()))
+                this.buffer.Append((char)this.Read());
+            if (this.Peek() != '<' && this.Peek() >= 0)
+                this.isWhitespace = false;
         }
 
         public void SkipWhitespaces(bool expected)
         {
             while (true)
             {
-                switch (Peek())
+                switch (this.Peek())
                 {
                     case ' ':
                     case '\r':
                     case '\t':
                     case '\n':
-                        Read();
+                        this.Read();
                         if (expected)
                             expected = false;
                         continue;
                 }
                 if (expected)
-                    throw Error("Whitespace is expected.");
+                    throw this.Error("Whitespace is expected.");
                 return;
             }
         }
 
-
-        private int Peek()
+        int Peek()
         {
-            return reader.Peek();
+            return this.reader.Peek();
         }
 
-        private int Read()
+        int Read()
         {
-            int i = reader.Read();
+            int i = this.reader.Read();
             if (i == '\n')
-                resetColumn = true;
-            if (resetColumn)
+                this.resetColumn = true;
+            if (this.resetColumn)
             {
-                line++;
-                resetColumn = false;
-                column = 1;
+                this.line++;
+                this.resetColumn = false;
+                this.column = 1;
             }
             else
-                column++;
+                this.column++;
             return i;
         }
 
         public void Expect(int c)
         {
-            int p = Read();
+            int p = this.Read();
             if (p < 0)
-                throw UnexpectedEndError();
+                throw this.UnexpectedEndError();
             else if (p != c)
-                throw Error(String.Format("Expected '{0}' but got {1}", (char)c, (char)p));
+                throw this.Error(string.Format("Expected '{0}' but got {1}", (char)c, (char)p));
         }
 
-        private string ReadUntil(char until, bool handleReferences)
+        string ReadUntil(char until, bool handleReferences)
         {
             while (true)
             {
-                if (Peek() < 0)
-                    throw UnexpectedEndError();
-                char c = (char)Read();
+                if (this.Peek() < 0)
+                    throw this.UnexpectedEndError();
+                char c = (char)this.Read();
                 if (c == until)
                     break;
                 else if (handleReferences && c == '&')
-                    ReadReference();
+                    this.ReadReference();
                 else
-                    buffer.Append(c);
+                    this.buffer.Append(c);
             }
-            string ret = buffer.ToString();
-            buffer.Length = 0;
+            string ret = this.buffer.ToString();
+            this.buffer.Length = 0;
             return ret;
         }
 
         public string ReadName()
         {
             int idx = 0;
-            if (Peek() < 0 || !IsNameChar((char)Peek(), true))
-                throw Error("XML name start character is expected.");
-            for (int i = Peek(); i >= 0; i = Peek())
+            if (this.Peek() < 0 || !this.IsNameChar((char)this.Peek(), true))
+                throw this.Error("XML name start character is expected.");
+            for (int i = this.Peek(); i >= 0; i = this.Peek())
             {
                 char c = (char)i;
-                if (!IsNameChar(c, false))
+                if (!this.IsNameChar(c, false))
                     break;
-                if (idx == nameBuffer.Length)
+                if (idx == this.nameBuffer.Length)
                 {
-                    char[] tmp = new char[idx * 2];
-                    Array.Copy(nameBuffer, tmp, idx);
-                    nameBuffer = tmp;
+                    var tmp = new char[idx * 2];
+                    Array.Copy(this.nameBuffer, tmp, idx);
+                    this.nameBuffer = tmp;
                 }
-                nameBuffer[idx++] = c;
-                Read();
+                this.nameBuffer[idx++] = c;
+                this.Read();
             }
             if (idx == 0)
-                throw Error("Valid XML name is expected.");
-            return new string(nameBuffer, 0, idx);
+                throw this.Error("Valid XML name is expected.");
+            return new string(this.nameBuffer, 0, idx);
         }
-
 
         public void Parse(TextReader input, IContentHandler handler)
         {
@@ -288,147 +300,147 @@ namespace ConsoleApplication16
 
             handler.OnStartParsing(this);
 
-            while (Peek() >= 0)
-                ReadContent();
-            HandleBufferedContent();
-            if (elementNames.Count > 0)
-                throw Error(String.Format("Insufficient close tag: {0}", elementNames.Peek()));
+            while (this.Peek() >= 0)
+                this.ReadContent();
+            this.HandleBufferedContent();
+            if (this.elementNames.Count > 0)
+                throw this.Error(string.Format("Insufficient close tag: {0}", this.elementNames.Peek()));
 
             handler.OnEndParsing(this);
 
-            Cleanup();
+            this.Cleanup();
         }
 
-        private void Cleanup()
+        void Cleanup()
         {
-            line = 1;
-            column = 0;
-            handler = null;
-            reader = null;
-            elementNames.Clear();
-            xmlSpaces.Clear();
-            attributes.Clear();
-            buffer.Length = 0;
-            xmlSpace = null;
-            isWhitespace = false;
+            this.line = 1;
+            this.column = 0;
+            this.handler = null;
+            this.reader = null;
+            this.elementNames.Clear();
+            this.xmlSpaces.Clear();
+            this.attributes.Clear();
+            this.buffer.Length = 0;
+            this.xmlSpace = null;
+            this.isWhitespace = false;
         }
 
         public void ReadContent()
         {
             string name;
-            if (IsWhitespace(Peek()))
+            if (this.IsWhitespace(this.Peek()))
             {
-                if (buffer.Length == 0)
-                    isWhitespace = true;
-                HandleWhitespaces();
+                if (this.buffer.Length == 0)
+                    this.isWhitespace = true;
+                this.HandleWhitespaces();
             }
-            if (Peek() == '<')
+            if (this.Peek() == '<')
             {
-                Read();
-                switch (Peek())
+                this.Read();
+                switch (this.Peek())
                 {
                     case '!': // declarations
-                        Read();
-                        if (Peek() == '[')
+                        this.Read();
+                        if (this.Peek() == '[')
                         {
-                            Read();
-                            if (ReadName() != "CDATA")
-                                throw Error("Invalid declaration markup");
-                            Expect('[');
-                            ReadCDATASection();
+                            this.Read();
+                            if (this.ReadName() != "CDATA")
+                                throw this.Error("Invalid declaration markup");
+                            this.Expect('[');
+                            this.ReadCDATASection();
                             return;
                         }
-                        else if (Peek() == '-')
+                        else if (this.Peek() == '-')
                         {
-                            ReadComment();
+                            this.ReadComment();
                             return;
                         }
-                        else if (ReadName() != "DOCTYPE")
-                            throw Error("Invalid declaration markup.");
+                        else if (this.ReadName() != "DOCTYPE")
+                            throw this.Error("Invalid declaration markup.");
                         else
-                            throw Error("This parser does not support document type.");
+                            throw this.Error("This parser does not support document type.");
                     case '?': // PIs
-                        HandleBufferedContent();
-                        Read();
-                        name = ReadName();
-                        SkipWhitespaces();
-                        string text = String.Empty;
-                        if (Peek() != '?')
+                        this.HandleBufferedContent();
+                        this.Read();
+                        name = this.ReadName();
+                        this.SkipWhitespaces();
+                        string text = string.Empty;
+                        if (this.Peek() != '?')
                         {
                             while (true)
                             {
-                                text += ReadUntil('?', false);
-                                if (Peek() == '>')
+                                text += this.ReadUntil('?', false);
+                                if (this.Peek() == '>')
                                     break;
                                 text += "?";
                             }
                         }
-                        handler.OnProcessingInstruction(
+                        this.handler.OnProcessingInstruction(
                             name, text);
-                        Expect('>');
+                        this.Expect('>');
                         return;
                     case '/': // end tags
-                        HandleBufferedContent();
-                        if (elementNames.Count == 0)
-                            throw UnexpectedEndError();
-                        Read();
-                        name = ReadName();
-                        SkipWhitespaces();
-                        string expected = (string)elementNames.Pop();
-                        xmlSpaces.Pop();
-                        if (xmlSpaces.Count > 0)
-                            xmlSpace = (string)xmlSpaces.Peek();
+                        this.HandleBufferedContent();
+                        if (this.elementNames.Count == 0)
+                            throw this.UnexpectedEndError();
+                        this.Read();
+                        name = this.ReadName();
+                        this.SkipWhitespaces();
+                        string expected = (string)this.elementNames.Pop();
+                        this.xmlSpaces.Pop();
+                        if (this.xmlSpaces.Count > 0)
+                            this.xmlSpace = (string)this.xmlSpaces.Peek();
                         else
-                            xmlSpace = null;
+                            this.xmlSpace = null;
                         if (name != expected)
-                            throw Error(String.Format("End tag mismatch: expected {0} but found {1}", expected, name));
-                        handler.OnEndElement(name);
-                        Expect('>');
+                            throw this.Error(string.Format("End tag mismatch: expected {0} but found {1}", expected, name));
+                        this.handler.OnEndElement(name);
+                        this.Expect('>');
                         return;
                     default: // start tags (including empty tags)
-                        HandleBufferedContent();
-                        name = ReadName();
-                        while (Peek() != '>' && Peek() != '/')
-                            ReadAttribute(attributes);
-                        handler.OnStartElement(name, attributes);
-                        attributes.Clear();
-                        SkipWhitespaces();
-                        if (Peek() == '/')
+                        this.HandleBufferedContent();
+                        name = this.ReadName();
+                        while (this.Peek() != '>' && this.Peek() != '/')
+                            this.ReadAttribute(this.attributes);
+                        this.handler.OnStartElement(name, this.attributes);
+                        this.attributes.Clear();
+                        this.SkipWhitespaces();
+                        if (this.Peek() == '/')
                         {
-                            Read();
-                            handler.OnEndElement(name);
+                            this.Read();
+                            this.handler.OnEndElement(name);
                         }
                         else
                         {
-                            elementNames.Push(name);
-                            xmlSpaces.Push(xmlSpace);
+                            this.elementNames.Push(name);
+                            this.xmlSpaces.Push(this.xmlSpace);
                         }
-                        Expect('>');
+                        this.Expect('>');
                         return;
                 }
             }
             else
-                ReadCharacters();
+                this.ReadCharacters();
         }
 
-        private void HandleBufferedContent()
+        void HandleBufferedContent()
         {
-            if (buffer.Length == 0)
+            if (this.buffer.Length == 0)
                 return;
-            if (isWhitespace)
-                handler.OnIgnorableWhitespace(buffer.ToString());
+            if (this.isWhitespace)
+                this.handler.OnIgnorableWhitespace(this.buffer.ToString());
             else
-                handler.OnChars(buffer.ToString());
-            buffer.Length = 0;
-            isWhitespace = false;
+                this.handler.OnChars(this.buffer.ToString());
+            this.buffer.Length = 0;
+            this.isWhitespace = false;
         }
 
-        private void ReadCharacters()
+        void ReadCharacters()
         {
-            isWhitespace = false;
+            this.isWhitespace = false;
             while (true)
             {
-                int i = Peek();
+                int i = this.Peek();
                 switch (i)
                 {
                     case -1:
@@ -436,150 +448,151 @@ namespace ConsoleApplication16
                     case '<':
                         return;
                     case '&':
-                        Read();
-                        ReadReference();
+                        this.Read();
+                        this.ReadReference();
                         continue;
                     default:
-                        buffer.Append((char)Read());
+                        this.buffer.Append((char)this.Read());
                         continue;
                 }
             }
         }
 
-        private void ReadReference()
+        void ReadReference()
         {
-            if (Peek() == '#')
+            if (this.Peek() == '#')
             {
                 // character reference
-                Read();
-                ReadCharacterReference();
+                this.Read();
+                this.ReadCharacterReference();
             }
             else
             {
-                string name = ReadName();
-                Expect(';');
+                string name = this.ReadName();
+                this.Expect(';');
                 switch (name)
                 {
                     case "amp":
-                        buffer.Append('&');
+                        this.buffer.Append('&');
                         break;
                     case "quot":
-                        buffer.Append('"');
+                        this.buffer.Append('"');
                         break;
                     case "apos":
-                        buffer.Append('\'');
+                        this.buffer.Append('\'');
                         break;
                     case "lt":
-                        buffer.Append('<');
+                        this.buffer.Append('<');
                         break;
                     case "gt":
-                        buffer.Append('>');
+                        this.buffer.Append('>');
                         break;
                     default:
-                        throw Error("General non-predefined entity reference is not supported in this parser.");
+                        throw this.Error("General non-predefined entity reference is not supported in this parser.");
                 }
             }
         }
 
-        private int ReadCharacterReference()
+        int ReadCharacterReference()
         {
             int n = 0;
-            if (Peek() == 'x')
-            { // hex
-                Read();
-                for (int i = Peek(); i >= 0; i = Peek())
+            if (this.Peek() == 'x')
+            {
+                // hex
+                this.Read();
+                for (int i = this.Peek(); i >= 0; i = this.Peek())
                 {
                     if ('0' <= i && i <= '9')
-                        n = n << 4 + i - '0';
+                        n = n << (4 + i - '0');
                     else if ('A' <= i && i <= 'F')
-                        n = n << 4 + i - 'A' + 10;
+                        n = n << (4 + i - 'A' + 10);
                     else if ('a' <= i && i <= 'f')
-                        n = n << 4 + i - 'a' + 10;
+                        n = n << (4 + i - 'a' + 10);
                     else
                         break;
-                    Read();
+                    this.Read();
                 }
             }
             else
             {
-                for (int i = Peek(); i >= 0; i = Peek())
+                for (int i = this.Peek(); i >= 0; i = this.Peek())
                 {
                     if ('0' <= i && i <= '9')
-                        n = n << 4 + i - '0';
+                        n = n << (4 + i - '0');
                     else
                         break;
-                    Read();
+                    this.Read();
                 }
             }
             return n;
         }
 
-        private void ReadAttribute(AttrListImpl a)
+        void ReadAttribute(AttrListImpl a)
         {
-            SkipWhitespaces(true);
-            if (Peek() == '/' || Peek() == '>')
+            this.SkipWhitespaces(true);
+            if (this.Peek() == '/' || this.Peek() == '>')
                 // came here just to spend trailing whitespaces
                 return;
 
-            string name = ReadName();
+            string name = this.ReadName();
             string value;
-            SkipWhitespaces();
-            Expect('=');
-            SkipWhitespaces();
-            switch (Read())
+            this.SkipWhitespaces();
+            this.Expect('=');
+            this.SkipWhitespaces();
+            switch (this.Read())
             {
                 case '\'':
-                    value = ReadUntil('\'', true);
+                    value = this.ReadUntil('\'', true);
                     break;
                 case '"':
-                    value = ReadUntil('"', true);
+                    value = this.ReadUntil('"', true);
                     break;
                 default:
-                    throw Error("Invalid attribute value markup.");
+                    throw this.Error("Invalid attribute value markup.");
             }
             if (name == "xml:space")
-                xmlSpace = value;
+                this.xmlSpace = value;
             a.Add(name, value);
         }
 
-        private void ReadCDATASection()
+        void ReadCDATASection()
         {
             int nBracket = 0;
             while (true)
             {
-                if (Peek() < 0)
-                    throw UnexpectedEndError();
-                char c = (char)Read();
+                if (this.Peek() < 0)
+                    throw this.UnexpectedEndError();
+                char c = (char)this.Read();
                 if (c == ']')
                     nBracket++;
                 else if (c == '>' && nBracket > 1)
                 {
                     for (int i = nBracket; i > 2; i--)
-                        buffer.Append(']');
+                        this.buffer.Append(']');
                     break;
                 }
                 else
                 {
                     for (int i = 0; i < nBracket; i++)
-                        buffer.Append(']');
+                        this.buffer.Append(']');
                     nBracket = 0;
-                    buffer.Append(c);
+                    this.buffer.Append(c);
                 }
             }
         }
 
-        private void ReadComment()
+        void ReadComment()
         {
-            Expect('-');
-            Expect('-');
+            this.Expect('-');
+            this.Expect('-');
             while (true)
             {
-                if (Read() != '-')
+                if (this.Read() != '-')
                     continue;
-                if (Read() != '-')
+                if (this.Read() != '-')
                     continue;
-                if (Read() != '>')
-                    throw Error("'--' is not allowed inside comment markup.");
+                if (this.Read() != '>')
+                    throw this.Error("'--' is not allowed inside comment markup.");
                 break;
             }
         }
@@ -591,13 +604,13 @@ namespace ConsoleApplication16
     [CLSCompliant(false)]
     public
 #endif
- class SmallXmlParserException : SystemException
+        class SmallXmlParserException : SystemException
     {
-        int line;
-        int column;
+        readonly int line;
+        readonly int column;
 
         public SmallXmlParserException(string msg, int line, int column)
-            : base(String.Format("{0}. At ({1},{2})", msg, line, column))
+            : base(string.Format("{0}. At ({1},{2})", msg, line, column))
         {
             this.line = line;
             this.column = column;
@@ -605,12 +618,12 @@ namespace ConsoleApplication16
 
         public int Line
         {
-            get { return line; }
+            get { return this.line; }
         }
 
         public int Column
         {
-            get { return column; }
+            get { return this.column; }
         }
     }
 }

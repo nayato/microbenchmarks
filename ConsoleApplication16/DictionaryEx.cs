@@ -23,20 +23,20 @@
     [Serializable]
     public class DictionaryEx<TKey, TValue> : IDictionary<TKey, TValue>, ICollection, IReadOnlyDictionary<TKey, TValue>
     {
-        private int[] buckets;
-        private Entry[] entries;
-        private int count;
-        private int version;
-        private int freeList;
-        private int freeCount;
-        private IEqualityComparer<TKey> comparer;
-        private KeyCollection keys;
-        private ValueCollection values;
-        private object _syncRoot;
-        private const string VersionName = "Version";
-        private const string HashSizeName = "HashSize";
-        private const string KeyValuePairsName = "KeyValuePairs";
-        private const string ComparerName = "Comparer";
+        int[] buckets;
+        Entry[] entries;
+        int count;
+        int version;
+        int freeList;
+        int freeCount;
+        readonly IEqualityComparer<TKey> comparer;
+        KeyCollection keys;
+        ValueCollection values;
+        object _syncRoot;
+        const string VersionName = "Version";
+        const string HashSizeName = "HashSize";
+        const string KeyValuePairsName = "KeyValuePairs";
+        const string ComparerName = "Comparer";
 
         /// <summary>
         ///     Gets the <see cref="T:System.Collections.Generic.IEqualityComparer`1" /> that is used to determine equality of keys
@@ -49,8 +49,7 @@
         /// </returns>
         public IEqualityComparer<TKey> Comparer
         {
-            [TargetedPatchingOptOut("Performance critical to inline this type of method across NGen image boundaries")]
-            get { return comparer; }
+            [TargetedPatchingOptOut("Performance critical to inline this type of method across NGen image boundaries")] get { return this.comparer; }
         }
 
         /// <summary>
@@ -61,7 +60,7 @@
         /// </returns>
         public int Count
         {
-            get { return count - freeCount; }
+            get { return this.count - this.freeCount; }
         }
 
         /// <summary>
@@ -75,31 +74,29 @@
         {
             get
             {
-                if (keys == null)
-                    keys = new KeyCollection(this);
-                return keys;
+                if (this.keys == null)
+                    this.keys = new KeyCollection(this);
+                return this.keys;
             }
         }
-
 
         ICollection<TKey> IDictionary<TKey, TValue>.Keys
         {
             get
             {
-                if (keys == null)
-                    keys = new KeyCollection(this);
-                return (ICollection<TKey>) keys;
+                if (this.keys == null)
+                    this.keys = new KeyCollection(this);
+                return (ICollection<TKey>)this.keys;
             }
         }
-
 
         IEnumerable<TKey> IReadOnlyDictionary<TKey, TValue>.Keys
         {
             get
             {
-                if (keys == null)
-                    keys = new KeyCollection(this);
-                return keys;
+                if (this.keys == null)
+                    this.keys = new KeyCollection(this);
+                return this.keys;
             }
         }
 
@@ -114,31 +111,29 @@
         {
             get
             {
-                if (values == null)
-                    values = new ValueCollection(this);
-                return values;
+                if (this.values == null)
+                    this.values = new ValueCollection(this);
+                return this.values;
             }
         }
-
 
         ICollection<TValue> IDictionary<TKey, TValue>.Values
         {
             get
             {
-                if (values == null)
-                    values = new ValueCollection(this);
-                return values;
+                if (this.values == null)
+                    this.values = new ValueCollection(this);
+                return this.values;
             }
         }
-
 
         IEnumerable<TValue> IReadOnlyDictionary<TKey, TValue>.Values
         {
             get
             {
-                if (values == null)
-                    values = new ValueCollection(this);
-                return values;
+                if (this.values == null)
+                    this.values = new ValueCollection(this);
+                return this.values;
             }
         }
 
@@ -160,41 +155,38 @@
         {
             get
             {
-                int entry = FindEntry(key);
+                int entry = this.FindEntry(key);
                 if (entry >= 0)
-                    return entries[entry].value;
+                    return this.entries[entry].value;
                 throw new KeyNotFoundException();
             }
 
-            [TargetedPatchingOptOut("Performance critical to inline this type of method across NGen image boundaries")]
-            set { Insert(key, value, false); }
+            [TargetedPatchingOptOut("Performance critical to inline this type of method across NGen image boundaries")] set { this.Insert(key, value, false); }
         }
-
 
         bool ICollection<KeyValuePair<TKey, TValue>>.IsReadOnly
         {
             get { return false; }
         }
 
-
         bool ICollection.IsSynchronized
         {
             get { return false; }
         }
 
-
         object ICollection.SyncRoot
         {
             get
             {
-                if (_syncRoot == null)
-                    Interlocked.CompareExchange<object>(ref _syncRoot, new object(), (object) null);
-                return _syncRoot;
+                if (this._syncRoot == null)
+                    Interlocked.CompareExchange<object>(ref this._syncRoot, new object(), (object)null);
+                return this._syncRoot;
             }
         }
 
         /// <summary>
-        ///     Initializes a new instance of the <see cref="T:System.Collections.Generic.DictionaryEx`2" /> class that is empty, has
+        ///     Initializes a new instance of the <see cref="T:System.Collections.Generic.DictionaryEx`2" /> class that is empty,
+        ///     has
         ///     the default initial capacity, and uses the default equality comparer for the key type.
         /// </summary>
         [TargetedPatchingOptOut("Performance critical to inline this type of method across NGen image boundaries")]
@@ -204,7 +196,8 @@
         }
 
         /// <summary>
-        ///     Initializes a new instance of the <see cref="T:System.Collections.Generic.DictionaryEx`2" /> class that is empty, has
+        ///     Initializes a new instance of the <see cref="T:System.Collections.Generic.DictionaryEx`2" /> class that is empty,
+        ///     has
         ///     the specified initial capacity, and uses the default equality comparer for the key type.
         /// </summary>
         /// <param name="capacity">
@@ -219,7 +212,8 @@
         }
 
         /// <summary>
-        ///     Initializes a new instance of the <see cref="T:System.Collections.Generic.DictionaryEx`2" /> class that is empty, has
+        ///     Initializes a new instance of the <see cref="T:System.Collections.Generic.DictionaryEx`2" /> class that is empty,
+        ///     has
         ///     the default initial capacity, and uses the specified
         ///     <see cref="T:System.Collections.Generic.IEqualityComparer`1" />.
         /// </summary>
@@ -235,7 +229,8 @@
         }
 
         /// <summary>
-        ///     Initializes a new instance of the <see cref="T:System.Collections.Generic.DictionaryEx`2" /> class that is empty, has
+        ///     Initializes a new instance of the <see cref="T:System.Collections.Generic.DictionaryEx`2" /> class that is empty,
+        ///     has
         ///     the specified initial capacity, and uses the specified
         ///     <see cref="T:System.Collections.Generic.IEqualityComparer`1" />.
         /// </summary>
@@ -254,7 +249,7 @@
             if (capacity < 0)
                 throw new ArgumentOutOfRangeException("capacity");
             if (capacity > 0)
-                Initialize(capacity);
+                this.Initialize(capacity);
             this.comparer = comparer ?? EqualityComparer<TKey>.Default;
         }
 
@@ -295,10 +290,10 @@
             : this(dictionary != null ? dictionary.Count : 0, comparer)
         {
             if (dictionary == null)
-                throw new ArgumentNullException("dictionary"); 
+                throw new ArgumentNullException("dictionary");
             foreach (KeyValuePair<TKey, TValue> keyValuePair in dictionary)
             {
-                Add(keyValuePair.Key, keyValuePair.Value);
+                this.Add(keyValuePair.Key, keyValuePair.Value);
             }
         }
 
@@ -315,12 +310,12 @@
         [TargetedPatchingOptOut("Performance critical to inline this type of method across NGen image boundaries")]
         public void Add(TKey key, TValue value)
         {
-            Insert(key, value, true);
+            this.Insert(key, value, true);
         }
 
         public void AddOrUpdate(TKey key, TValue value, Func<TKey, TValue, TValue, TValue> updateFunc)
         {
-            Insert(key, value, false, updateFunc);
+            this.Insert(key, value, false, updateFunc);
         }
 
         //public void AddOrUpdate<TValue, TTransientValue>(TKey key,
@@ -332,23 +327,21 @@
 
         void ICollection<KeyValuePair<TKey, TValue>>.Add(KeyValuePair<TKey, TValue> keyValuePair)
         {
-            Add(keyValuePair.Key, keyValuePair.Value);
+            this.Add(keyValuePair.Key, keyValuePair.Value);
         }
-
 
         bool ICollection<KeyValuePair<TKey, TValue>>.Contains(KeyValuePair<TKey, TValue> keyValuePair)
         {
-            int entry = FindEntry(keyValuePair.Key);
-            return entry >= 0 && EqualityComparer<TValue>.Default.Equals(entries[entry].value, keyValuePair.Value);
+            int entry = this.FindEntry(keyValuePair.Key);
+            return entry >= 0 && EqualityComparer<TValue>.Default.Equals(this.entries[entry].value, keyValuePair.Value);
         }
-
 
         bool ICollection<KeyValuePair<TKey, TValue>>.Remove(KeyValuePair<TKey, TValue> keyValuePair)
         {
-            int entry = FindEntry(keyValuePair.Key);
-            if (entry < 0 || !EqualityComparer<TValue>.Default.Equals(entries[entry].value, keyValuePair.Value))
+            int entry = this.FindEntry(keyValuePair.Key);
+            if (entry < 0 || !EqualityComparer<TValue>.Default.Equals(this.entries[entry].value, keyValuePair.Value))
                 return false;
-            Remove(keyValuePair.Key);
+            this.Remove(keyValuePair.Key);
             return true;
         }
 
@@ -357,17 +350,17 @@
         /// </summary>
         public void Clear()
         {
-            if (count <= 0)
+            if (this.count <= 0)
                 return;
-            for (int index = 0; index < buckets.Length; ++index)
+            for (int index = 0; index < this.buckets.Length; ++index)
             {
-                buckets[index] = -1;
+                this.buckets[index] = -1;
             }
-            Array.Clear((Array) entries, 0, count);
-            freeList = -1;
-            count = 0;
-            freeCount = 0;
-            ++version;
+            Array.Clear((Array)this.entries, 0, this.count);
+            this.freeList = -1;
+            this.count = 0;
+            this.freeCount = 0;
+            ++this.version;
         }
 
         /// <summary>
@@ -381,14 +374,15 @@
         /// <exception cref="T:System.ArgumentNullException"><paramref name="key" /> is null.</exception>
         public bool ContainsKey(TKey key)
         {
-            return FindEntry(key) >= 0;
+            return this.FindEntry(key) >= 0;
         }
 
         /// <summary>
         ///     Determines whether the <see cref="T:System.Collections.Generic.DictionaryEx`2" /> contains a specific value.
         /// </summary>
         /// <returns>
-        ///     true if the <see cref="T:System.Collections.Generic.DictionaryEx`2" /> contains an element with the specified value;
+        ///     true if the <see cref="T:System.Collections.Generic.DictionaryEx`2" /> contains an element with the specified
+        ///     value;
         ///     otherwise, false.
         /// </returns>
         /// <param name="value">
@@ -397,37 +391,37 @@
         /// </param>
         public bool ContainsValue(TValue value)
         {
-            if ((object) value == null)
+            if ((object)value == null)
             {
-                for (int index = 0; index < count; ++index)
+                for (int index = 0; index < this.count; ++index)
                 {
-                    if (entries[index].hashCode >= 0 && (object) entries[index].value == null)
+                    if (this.entries[index].hashCode >= 0 && (object)this.entries[index].value == null)
                         return true;
                 }
             }
             else
             {
                 EqualityComparer<TValue> @default = EqualityComparer<TValue>.Default;
-                for (int index = 0; index < count; ++index)
+                for (int index = 0; index < this.count; ++index)
                 {
-                    if (entries[index].hashCode >= 0 && @default.Equals(entries[index].value, value))
+                    if (this.entries[index].hashCode >= 0 && @default.Equals(this.entries[index].value, value))
                         return true;
                 }
             }
             return false;
         }
 
-        private void CopyTo(KeyValuePair<TKey, TValue>[] array, int index)
+        void CopyTo(KeyValuePair<TKey, TValue>[] array, int index)
         {
             if (array == null)
-                throw new ArgumentNullException("array"); 
+                throw new ArgumentNullException("array");
             if (index < 0 || index > array.Length)
                 throw new ArgumentOutOfRangeException("index", "ArgumentOutOfRange_NeedNonNegNum")
-            ;
-            if (array.Length - index < Count)
-                throw new ArgumentException("Arg_ArrayPlusOffTooSmall"); 
-            int num = count;
-            Entry[] entryArray = entries;
+                    ;
+            if (array.Length - index < this.Count)
+                throw new ArgumentException("Arg_ArrayPlusOffTooSmall");
+            int num = this.count;
+            Entry[] entryArray = this.entries;
             for (int index1 = 0; index1 < num; ++index1)
             {
                 if (entryArray[index1].hashCode >= 0)
@@ -447,86 +441,85 @@
             return new Enumerator(this, 2);
         }
 
-
         IEnumerator<KeyValuePair<TKey, TValue>> IEnumerable<KeyValuePair<TKey, TValue>>.GetEnumerator()
         {
             return new Enumerator(this, 2);
         }
 
-        private int FindEntry(TKey key)
+        int FindEntry(TKey key)
         {
-            if ((object) key == null)
-                throw new ArgumentNullException("key"); 
-            if (buckets != null)
+            if ((object)key == null)
+                throw new ArgumentNullException("key");
+            if (this.buckets != null)
             {
-                int num = comparer.GetHashCode(key) & int.MaxValue;
-                for (int index = buckets[num % buckets.Length]; index >= 0; index = entries[index].next)
+                int num = this.comparer.GetHashCode(key) & int.MaxValue;
+                for (int index = this.buckets[num % this.buckets.Length]; index >= 0; index = this.entries[index].next)
                 {
-                    if (entries[index].hashCode == num && comparer.Equals(entries[index].key, key))
+                    if (this.entries[index].hashCode == num && this.comparer.Equals(this.entries[index].key, key))
                         return index;
                 }
             }
             return -1;
         }
 
-        private void Initialize(int capacity)
+        void Initialize(int capacity)
         {
             int prime = GetPrime(capacity);
-            buckets = new int[prime];
-            for (int index = 0; index < buckets.Length; ++index)
+            this.buckets = new int[prime];
+            for (int index = 0; index < this.buckets.Length; ++index)
             {
-                buckets[index] = -1;
+                this.buckets[index] = -1;
             }
-            entries = new Entry[prime];
-            freeList = -1;
+            this.entries = new Entry[prime];
+            this.freeList = -1;
         }
 
-        private void Insert(TKey key, TValue value, bool add, Func<TKey, TValue, TValue, TValue> updateFunc = null)
+        void Insert(TKey key, TValue value, bool add, Func<TKey, TValue, TValue, TValue> updateFunc = null)
         {
             if ((object)key == null)
                 throw new ArgumentNullException("key");
-            if (buckets == null)
-                Initialize(0);
-            int num1 = comparer.GetHashCode(key) & int.MaxValue;
-            int index1 = num1 % buckets.Length;
+            if (this.buckets == null)
+                this.Initialize(0);
+            int num1 = this.comparer.GetHashCode(key) & int.MaxValue;
+            int index1 = num1 % this.buckets.Length;
             int num2 = 0;
-            for (int index2 = buckets[index1]; index2 >= 0; index2 = entries[index2].next)
+            for (int index2 = this.buckets[index1]; index2 >= 0; index2 = this.entries[index2].next)
             {
-                if (entries[index2].hashCode == num1 && comparer.Equals(entries[index2].key, key))
+                if (this.entries[index2].hashCode == num1 && this.comparer.Equals(this.entries[index2].key, key))
                 {
                     if (add)
                         throw new ArgumentException("Argument_AddingDuplicate");
-                    entries[index2].value = updateFunc == null ? value : updateFunc(key, entries[index2].value, value);
-                    ++version;
+                    this.entries[index2].value = updateFunc == null ? value : updateFunc(key, this.entries[index2].value, value);
+                    ++this.version;
                     return;
                 }
                 else
                     ++num2;
             }
             int index3;
-            if (freeCount > 0)
+            if (this.freeCount > 0)
             {
-                index3 = freeList;
-                freeList = entries[index3].next;
-                --freeCount;
+                index3 = this.freeList;
+                this.freeList = this.entries[index3].next;
+                --this.freeCount;
             }
             else
             {
-                if (count == entries.Length)
+                if (this.count == this.entries.Length)
                 {
-                    Resize();
-                    index1 = num1 % buckets.Length;
+                    this.Resize();
+                    index1 = num1 % this.buckets.Length;
                 }
-                index3 = count;
-                ++count;
+                index3 = this.count;
+                ++this.count;
             }
-            entries[index3].hashCode = num1;
-            entries[index3].next = buckets[index1];
-            entries[index3].key = key;
-            entries[index3].value = value;
-            buckets[index1] = index3;
-            ++version;
-            if (num2 <= 100 || (comparer != null && comparer != EqualityComparer<string>.Default))
+            this.entries[index3].hashCode = num1;
+            this.entries[index3].next = this.buckets[index1];
+            this.entries[index3].key = key;
+            this.entries[index3].value = value;
+            this.buckets[index1] = index3;
+            ++this.version;
+            if (num2 <= 100 || (this.comparer != null && this.comparer != EqualityComparer<string>.Default))
                 return;
 
             throw new NotSupportedException("There is high rate of collisions and such scenario is not supported.");
@@ -590,94 +583,95 @@
         //    ++version;
         //    if (num2 <= 100 || (comparer != null && comparer != EqualityComparer<string>.Default))
         //        return;
-            
+
         //    throw new NotSupportedException("There is high rate of collisions and such scenario is not supported.");
         //    //comparer = (IEqualityComparer<TKey>) HashHelpers.GetRandomizedEqualityComparer((object) comparer);
         //    //Resize(entries.Length, true);
         //}
 
-        private void Resize()
+        void Resize()
         {
-            Resize(ExpandPrime(count), false);
+            this.Resize(ExpandPrime(this.count), false);
         }
 
         #region Prime routines
-		        
-        private static readonly int[] primes = new int[72]
-            {
-              3,
-              7,
-              11,
-              17,
-              23,
-              29,
-              37,
-              47,
-              59,
-              71,
-              89,
-              107,
-              131,
-              163,
-              197,
-              239,
-              293,
-              353,
-              431,
-              521,
-              631,
-              761,
-              919,
-              1103,
-              1327,
-              1597,
-              1931,
-              2333,
-              2801,
-              3371,
-              4049,
-              4861,
-              5839,
-              7013,
-              8419,
-              10103,
-              12143,
-              14591,
-              17519,
-              21023,
-              25229,
-              30293,
-              36353,
-              43627,
-              52361,
-              62851,
-              75431,
-              90523,
-              108631,
-              130363,
-              156437,
-              187751,
-              225307,
-              270371,
-              324449,
-              389357,
-              467237,
-              560689,
-              672827,
-              807403,
-              968897,
-              1162687,
-              1395263,
-              1674319,
-              2009191,
-              2411033,
-              2893249,
-              3471899,
-              4166287,
-              4999559,
-              5999471,
-              7199369
-            };
+
+        static readonly int[] primes = new int[72]
+        {
+            3,
+            7,
+            11,
+            17,
+            23,
+            29,
+            37,
+            47,
+            59,
+            71,
+            89,
+            107,
+            131,
+            163,
+            197,
+            239,
+            293,
+            353,
+            431,
+            521,
+            631,
+            761,
+            919,
+            1103,
+            1327,
+            1597,
+            1931,
+            2333,
+            2801,
+            3371,
+            4049,
+            4861,
+            5839,
+            7013,
+            8419,
+            10103,
+            12143,
+            14591,
+            17519,
+            21023,
+            25229,
+            30293,
+            36353,
+            43627,
+            52361,
+            62851,
+            75431,
+            90523,
+            108631,
+            130363,
+            156437,
+            187751,
+            225307,
+            270371,
+            324449,
+            389357,
+            467237,
+            560689,
+            672827,
+            807403,
+            968897,
+            1162687,
+            1395263,
+            1674319,
+            2009191,
+            2411033,
+            2893249,
+            3471899,
+            4166287,
+            4999559,
+            5999471,
+            7199369
+        };
+
         internal static int GetPrime(int min)
         {
             if (min < 0)
@@ -721,34 +715,34 @@
             else
                 return GetPrime(min);
         }
- 
-    	#endregion
 
-        private void Resize(int newSize, bool forceNewHashCodes)
+        #endregion
+
+        void Resize(int newSize, bool forceNewHashCodes)
         {
-            int[] numArray = new int[newSize];
+            var numArray = new int[newSize];
             for (int index = 0; index < numArray.Length; ++index)
             {
                 numArray[index] = -1;
             }
-            Entry[] entryArray = new Entry[newSize];
-            Array.Copy((Array) entries, 0, (Array) entryArray, 0, count);
+            var entryArray = new Entry[newSize];
+            Array.Copy((Array)this.entries, 0, (Array)entryArray, 0, this.count);
             if (forceNewHashCodes)
             {
-                for (int index = 0; index < count; ++index)
+                for (int index = 0; index < this.count; ++index)
                 {
                     if (entryArray[index].hashCode != -1)
-                        entryArray[index].hashCode = comparer.GetHashCode(entryArray[index].key) & int.MaxValue;
+                        entryArray[index].hashCode = this.comparer.GetHashCode(entryArray[index].key) & int.MaxValue;
                 }
             }
-            for (int index1 = 0; index1 < count; ++index1)
+            for (int index1 = 0; index1 < this.count; ++index1)
             {
                 int index2 = entryArray[index1].hashCode % newSize;
                 entryArray[index1].next = numArray[index2];
                 numArray[index2] = index1;
             }
-            buckets = numArray;
-            entries = entryArray;
+            this.buckets = numArray;
+            this.entries = entryArray;
         }
 
         /// <summary>
@@ -762,28 +756,28 @@
         /// <exception cref="T:System.ArgumentNullException"><paramref name="key" /> is null.</exception>
         public bool Remove(TKey key)
         {
-            if ((object) key == null)
+            if ((object)key == null)
                 throw new ArgumentNullException("key");
-            if (buckets != null)
+            if (this.buckets != null)
             {
-                int num = comparer.GetHashCode(key) & int.MaxValue;
-                int index1 = num % buckets.Length;
+                int num = this.comparer.GetHashCode(key) & int.MaxValue;
+                int index1 = num % this.buckets.Length;
                 int index2 = -1;
-                for (int index3 = buckets[index1]; index3 >= 0; index3 = entries[index3].next)
+                for (int index3 = this.buckets[index1]; index3 >= 0; index3 = this.entries[index3].next)
                 {
-                    if (entries[index3].hashCode == num && comparer.Equals(entries[index3].key, key))
+                    if (this.entries[index3].hashCode == num && this.comparer.Equals(this.entries[index3].key, key))
                     {
                         if (index2 < 0)
-                            buckets[index1] = entries[index3].next;
+                            this.buckets[index1] = this.entries[index3].next;
                         else
-                            entries[index2].next = entries[index3].next;
-                        entries[index3].hashCode = -1;
-                        entries[index3].next = freeList;
-                        entries[index3].key = default(TKey);
-                        entries[index3].value = default(TValue);
-                        freeList = index3;
-                        ++freeCount;
-                        ++version;
+                            this.entries[index2].next = this.entries[index3].next;
+                        this.entries[index3].hashCode = -1;
+                        this.entries[index3].next = this.freeList;
+                        this.entries[index3].key = default(TKey);
+                        this.entries[index3].value = default(TValue);
+                        this.freeList = index3;
+                        ++this.freeCount;
+                        ++this.version;
                         return true;
                     }
                     else
@@ -809,10 +803,10 @@
         /// <exception cref="T:System.ArgumentNullException"><paramref name="key" /> is null.</exception>
         public bool TryGetValue(TKey key, out TValue value)
         {
-            int entry = FindEntry(key);
+            int entry = this.FindEntry(key);
             if (entry >= 0)
             {
-                value = entries[entry].value;
+                value = this.entries[entry].value;
                 return true;
             }
             else
@@ -824,20 +818,18 @@
 
         internal TValue GetValueOrDefault(TKey key)
         {
-            int entry = FindEntry(key);
+            int entry = this.FindEntry(key);
             if (entry >= 0)
-                return entries[entry].value;
+                return this.entries[entry].value;
             else
                 return default(TValue);
         }
 
-
         [TargetedPatchingOptOut("Performance critical to inline this type of method across NGen image boundaries")]
         void ICollection<KeyValuePair<TKey, TValue>>.CopyTo(KeyValuePair<TKey, TValue>[] array, int index)
         {
-            CopyTo(array, index);
+            this.CopyTo(array, index);
         }
-
 
         void ICollection.CopyTo(Array array, int index)
         {
@@ -849,37 +841,37 @@
                 throw new ArgumentException("Arg_NonZeroLowerBound");
             if (index < 0 || index > array.Length)
                 throw new ArgumentOutOfRangeException("index", "ArgumentOutOfRange_NeedNonNegNum");
-            if (array.Length - index < Count)
+            if (array.Length - index < this.Count)
                 throw new ArgumentException("Arg_ArrayPlusOffTooSmall");
-            KeyValuePair<TKey, TValue>[] array1 = array as KeyValuePair<TKey, TValue>[];
+            var array1 = array as KeyValuePair<TKey, TValue>[];
             if (array1 != null)
-                CopyTo(array1, index);
+                this.CopyTo(array1, index);
             else if (array is DictionaryEntry[])
             {
-                DictionaryEntry[] dictionaryEntryArray = array as DictionaryEntry[];
-                Entry[] entryArray = entries;
-                for (int index1 = 0; index1 < count; ++index1)
+                var dictionaryEntryArray = array as DictionaryEntry[];
+                Entry[] entryArray = this.entries;
+                for (int index1 = 0; index1 < this.count; ++index1)
                 {
                     if (entryArray[index1].hashCode >= 0)
                     {
-                        dictionaryEntryArray[index++] = new DictionaryEntry((object) entryArray[index1].key,
-                            (object) entryArray[index1].value);
+                        dictionaryEntryArray[index++] = new DictionaryEntry((object)entryArray[index1].key,
+                            (object)entryArray[index1].value);
                     }
                 }
             }
             else
             {
-                object[] objArray = array as object[];
+                var objArray = array as object[];
                 if (objArray == null)
                     throw new ArgumentException("Argument_InvalidArrayType");
                 try
                 {
-                    int num = count;
-                    Entry[] entryArray = entries;
+                    int num = this.count;
+                    Entry[] entryArray = this.entries;
                     for (int index1 = 0; index1 < num; ++index1)
                     {
                         if (entryArray[index1].hashCode >= 0)
-                            objArray[index++] = (object) new KeyValuePair<TKey, TValue>(entryArray[index1].key, entryArray[index1].value);
+                            objArray[index++] = (object)new KeyValuePair<TKey, TValue>(entryArray[index1].key, entryArray[index1].value);
                     }
                 }
                 catch (ArrayTypeMismatchException ex)
@@ -889,13 +881,12 @@
             }
         }
 
-
         IEnumerator IEnumerable.GetEnumerator()
         {
             return new Enumerator(this, 2);
         }
 
-        private struct Entry
+        struct Entry
         {
             public int hashCode;
             public int next;
@@ -911,11 +902,11 @@
         {
             internal const int DictEntry = 1;
             internal const int KeyValuePair = 2;
-            private DictionaryEx<TKey, TValue> dictionary;
-            private int version;
-            private int index;
-            private KeyValuePair<TKey, TValue> current;
-            private int getEnumeratorRetType;
+            readonly DictionaryEx<TKey, TValue> dictionary;
+            readonly int version;
+            int index;
+            KeyValuePair<TKey, TValue> current;
+            readonly int getEnumeratorRetType;
 
             /// <summary>
             ///     Gets the element at the current position of the enumerator.
@@ -926,31 +917,29 @@
             /// </returns>
             public KeyValuePair<TKey, TValue> Current
             {
-                [TargetedPatchingOptOut("Performance critical to inline this type of method across NGen image boundaries")]
-                get { return current; }
+                [TargetedPatchingOptOut("Performance critical to inline this type of method across NGen image boundaries")] get { return this.current; }
             }
-
 
             object IEnumerator.Current
             {
                 get
                 {
-                    if (index == 0 || index == dictionary.count + 1)
+                    if (this.index == 0 || this.index == this.dictionary.count + 1)
                         throw new InvalidOperationException("InvalidOperation_EnumOpCantHappen");
-                    if (getEnumeratorRetType == 1)
-                        return (object) new DictionaryEntry((object) current.Key, (object) current.Value);
+                    if (this.getEnumeratorRetType == 1)
+                        return (object)new DictionaryEntry((object)this.current.Key, (object)this.current.Value);
                     else
-                        return (object) new KeyValuePair<TKey, TValue>(current.Key, current.Value);
+                        return (object)new KeyValuePair<TKey, TValue>(this.current.Key, this.current.Value);
                 }
             }
 
             internal Enumerator(DictionaryEx<TKey, TValue> dictionary, int getEnumeratorRetType)
             {
                 this.dictionary = dictionary;
-                version = dictionary.version;
-                index = 0;
+                this.version = dictionary.version;
+                this.index = 0;
                 this.getEnumeratorRetType = getEnumeratorRetType;
-                current = new KeyValuePair<TKey, TValue>();
+                this.current = new KeyValuePair<TKey, TValue>();
             }
 
             /// <summary>
@@ -963,19 +952,19 @@
             /// <exception cref="T:System.InvalidOperationException">The collection was modified after the enumerator was created. </exception>
             public bool MoveNext()
             {
-                if (version != dictionary.version)
+                if (this.version != this.dictionary.version)
                     throw new InvalidOperationException("InvalidOperation_EnumFailedVersion");
-                for (; (uint) index < (uint) dictionary.count; ++index)
+                for (; (uint)this.index < (uint)this.dictionary.count; ++this.index)
                 {
-                    if (dictionary.entries[index].hashCode >= 0)
+                    if (this.dictionary.entries[this.index].hashCode >= 0)
                     {
-                        current = new KeyValuePair<TKey, TValue>(dictionary.entries[index].key, dictionary.entries[index].value);
-                        ++index;
+                        this.current = new KeyValuePair<TKey, TValue>(this.dictionary.entries[this.index].key, this.dictionary.entries[this.index].value);
+                        ++this.index;
                         return true;
                     }
                 }
-                index = dictionary.count + 1;
-                current = new KeyValuePair<TKey, TValue>();
+                this.index = this.dictionary.count + 1;
+                this.current = new KeyValuePair<TKey, TValue>();
                 return false;
             }
 
@@ -986,28 +975,29 @@
             {
             }
 
-
             void IEnumerator.Reset()
             {
-                if (version != dictionary.version)
+                if (this.version != this.dictionary.version)
                     throw new InvalidOperationException("InvalidOperation_EnumFailedVersion");
-                index = 0;
-                current = new KeyValuePair<TKey, TValue>();
+                this.index = 0;
+                this.current = new KeyValuePair<TKey, TValue>();
             }
         }
 
         /// <summary>
-        ///     Represents the collection of keys in a <see cref="T:System.Collections.Generic.DictionaryEx`2" />. This class cannot
+        ///     Represents the collection of keys in a <see cref="T:System.Collections.Generic.DictionaryEx`2" />. This class
+        ///     cannot
         ///     be inherited.
         /// </summary>
         [DebuggerDisplay("Count = {Count}")]
         [Serializable]
         public sealed class KeyCollection : ICollection<TKey>, IEnumerable<TKey>, ICollection, IEnumerable
         {
-            private DictionaryEx<TKey, TValue> dictionary;
+            readonly DictionaryEx<TKey, TValue> dictionary;
 
             /// <summary>
-            ///     Gets the number of elements contained in the <see cref="T:System.Collections.Generic.DictionaryEx`2.KeyCollection" />
+            ///     Gets the number of elements contained in the
+            ///     <see cref="T:System.Collections.Generic.DictionaryEx`2.KeyCollection" />
             ///     .
             /// </summary>
             /// <returns>
@@ -1016,29 +1006,27 @@
             /// </returns>
             public int Count
             {
-                get { return dictionary.Count; }
+                get { return this.dictionary.Count; }
             }
-
 
             bool ICollection<TKey>.IsReadOnly
             {
                 get { return true; }
             }
 
-
             bool ICollection.IsSynchronized
             {
                 get { return false; }
             }
 
-
             object ICollection.SyncRoot
             {
-                get { return ((ICollection)dictionary).SyncRoot; }
+                get { return ((ICollection)this.dictionary).SyncRoot; }
             }
 
             /// <summary>
-            ///     Initializes a new instance of the <see cref="T:System.Collections.Generic.DictionaryEx`2.KeyCollection" /> class that
+            ///     Initializes a new instance of the <see cref="T:System.Collections.Generic.DictionaryEx`2.KeyCollection" /> class
+            ///     that
             ///     reflects the keys in the specified <see cref="T:System.Collections.Generic.DictionaryEx`2" />.
             /// </summary>
             /// <param name="dictionary">
@@ -1063,7 +1051,7 @@
             /// </returns>
             public Enumerator GetEnumerator()
             {
-                return new Enumerator(dictionary);
+                return new Enumerator(this.dictionary);
             }
 
             /// <summary>
@@ -1072,7 +1060,8 @@
             /// </summary>
             /// <param name="array">
             ///     The one-dimensional <see cref="T:System.Array" /> that is the destination of the elements copied
-            ///     from <see cref="T:System.Collections.Generic.DictionaryEx`2.KeyCollection" />. The <see cref="T:System.Array" /> must
+            ///     from <see cref="T:System.Collections.Generic.DictionaryEx`2.KeyCollection" />. The <see cref="T:System.Array" />
+            ///     must
             ///     have zero-based indexing.
             /// </param>
             /// <param name="index">The zero-based index in <paramref name="array" /> at which copying begins.</param>
@@ -1089,10 +1078,10 @@
                     throw new ArgumentNullException("array");
                 if (index < 0 || index > array.Length)
                     throw new ArgumentOutOfRangeException("index", "ArgumentOutOfRange_NeedNonNegNum");
-                if (array.Length - index < dictionary.Count)
+                if (array.Length - index < this.dictionary.Count)
                     throw new ArgumentException("Arg_ArrayPlusOffTooSmall");
-                int num = dictionary.count;
-                Entry[] entryArray = dictionary.entries;
+                int num = this.dictionary.count;
+                Entry[] entryArray = this.dictionary.entries;
                 for (int index1 = 0; index1 < num; ++index1)
                 {
                     if (entryArray[index1].hashCode >= 0)
@@ -1100,24 +1089,20 @@
                 }
             }
 
-
             void ICollection<TKey>.Add(TKey item)
             {
                 throw new NotSupportedException("NotSupported_KeyCollectionSet");
             }
-
 
             void ICollection<TKey>.Clear()
             {
                 throw new NotSupportedException("NotSupported_KeyCollectionSet");
             }
 
-
             bool ICollection<TKey>.Contains(TKey item)
             {
-                return dictionary.ContainsKey(item);
+                return this.dictionary.ContainsKey(item);
             }
-
 
             bool ICollection<TKey>.Remove(TKey item)
             {
@@ -1125,18 +1110,15 @@
                 return false;
             }
 
-
             IEnumerator<TKey> IEnumerable<TKey>.GetEnumerator()
             {
-                return (IEnumerator<TKey>) new Enumerator(dictionary);
+                return (IEnumerator<TKey>)new Enumerator(this.dictionary);
             }
-
 
             IEnumerator IEnumerable.GetEnumerator()
             {
-                return (IEnumerator) new Enumerator(dictionary);
+                return (IEnumerator)new Enumerator(this.dictionary);
             }
-
 
             void ICollection.CopyTo(Array array, int index)
             {
@@ -1148,24 +1130,24 @@
                     throw new ArgumentException("Arg_NonZeroLowerBound");
                 if (index < 0 || index > array.Length)
                     throw new ArgumentOutOfRangeException("index", "ArgumentOutOfRange_NeedNonNegNum");
-                if (array.Length - index < dictionary.Count)
+                if (array.Length - index < this.dictionary.Count)
                     throw new ArgumentException("Arg_ArrayPlusOffTooSmall");
-                TKey[] array1 = array as TKey[];
+                var array1 = array as TKey[];
                 if (array1 != null)
-                    CopyTo(array1, index);
+                    this.CopyTo(array1, index);
                 else
                 {
-                    object[] objArray = array as object[];
+                    var objArray = array as object[];
                     if (objArray == null)
                         throw new ArgumentException("Argument_InvalidArrayType");
-                    int num = dictionary.count;
-                    Entry[] entryArray = dictionary.entries;
+                    int num = this.dictionary.count;
+                    Entry[] entryArray = this.dictionary.entries;
                     try
                     {
                         for (int index1 = 0; index1 < num; ++index1)
                         {
                             if (entryArray[index1].hashCode >= 0)
-                                objArray[index++] = (object) entryArray[index1].key;
+                                objArray[index++] = (object)entryArray[index1].key;
                         }
                     }
                     catch (ArrayTypeMismatchException ex)
@@ -1181,10 +1163,10 @@
             [Serializable]
             public struct Enumerator : IEnumerator<TKey>, IDisposable, IEnumerator
             {
-                private DictionaryEx<TKey, TValue> dictionary;
-                private int index;
-                private int version;
-                private TKey currentKey;
+                readonly DictionaryEx<TKey, TValue> dictionary;
+                int index;
+                readonly int version;
+                TKey currentKey;
 
                 /// <summary>
                 ///     Gets the element at the current position of the enumerator.
@@ -1195,27 +1177,25 @@
                 /// </returns>
                 public TKey Current
                 {
-                    [TargetedPatchingOptOut("Performance critical to inline this type of method across NGen image boundaries")]
-                    get { return currentKey; }
+                    [TargetedPatchingOptOut("Performance critical to inline this type of method across NGen image boundaries")] get { return this.currentKey; }
                 }
-
 
                 object IEnumerator.Current
                 {
                     get
                     {
-                        if (index == 0 || index == dictionary.count + 1)
+                        if (this.index == 0 || this.index == this.dictionary.count + 1)
                             throw new InvalidOperationException("InvalidOperation_EnumOpCantHappen");
-                        return (object) currentKey;
+                        return (object)this.currentKey;
                     }
                 }
 
                 internal Enumerator(DictionaryEx<TKey, TValue> dictionary)
                 {
                     this.dictionary = dictionary;
-                    version = dictionary.version;
-                    index = 0;
-                    currentKey = default(TKey);
+                    this.version = dictionary.version;
+                    this.index = 0;
+                    this.currentKey = default(TKey);
                 }
 
                 /// <summary>
@@ -1237,29 +1217,28 @@
                 /// <exception cref="T:System.InvalidOperationException">The collection was modified after the enumerator was created. </exception>
                 public bool MoveNext()
                 {
-                    if (version != dictionary.version)
+                    if (this.version != this.dictionary.version)
                         throw new InvalidOperationException("InvalidOperation_EnumFailedVersion");
-                    for (; (uint) index < (uint) dictionary.count; ++index)
+                    for (; (uint)this.index < (uint)this.dictionary.count; ++this.index)
                     {
-                        if (dictionary.entries[index].hashCode >= 0)
+                        if (this.dictionary.entries[this.index].hashCode >= 0)
                         {
-                            currentKey = dictionary.entries[index].key;
-                            ++index;
+                            this.currentKey = this.dictionary.entries[this.index].key;
+                            ++this.index;
                             return true;
                         }
                     }
-                    index = dictionary.count + 1;
-                    currentKey = default(TKey);
+                    this.index = this.dictionary.count + 1;
+                    this.currentKey = default(TKey);
                     return false;
                 }
 
-
                 void IEnumerator.Reset()
                 {
-                    if (version != dictionary.version)
+                    if (this.version != this.dictionary.version)
                         throw new InvalidOperationException("InvalidOperation_EnumFailedVersion");
-                    index = 0;
-                    currentKey = default(TKey);
+                    this.index = 0;
+                    this.currentKey = default(TKey);
                 }
             }
         }
@@ -1272,7 +1251,7 @@
         [Serializable]
         public sealed class ValueCollection : ICollection<TValue>, IEnumerable<TValue>, ICollection, IEnumerable
         {
-            private DictionaryEx<TKey, TValue> dictionary;
+            readonly DictionaryEx<TKey, TValue> dictionary;
 
             /// <summary>
             ///     Gets the number of elements contained in the
@@ -1283,25 +1262,22 @@
             /// </returns>
             public int Count
             {
-                get { return dictionary.Count; }
+                get { return this.dictionary.Count; }
             }
-
 
             bool ICollection<TValue>.IsReadOnly
             {
                 get { return true; }
             }
 
-
             bool ICollection.IsSynchronized
             {
                 get { return false; }
             }
 
-
             object ICollection.SyncRoot
             {
-                get { return ((ICollection)dictionary).SyncRoot; }
+                get { return ((ICollection)this.dictionary).SyncRoot; }
             }
 
             /// <summary>
@@ -1330,7 +1306,7 @@
             /// </returns>
             public Enumerator GetEnumerator()
             {
-                return new Enumerator(dictionary);
+                return new Enumerator(this.dictionary);
             }
 
             /// <summary>
@@ -1356,10 +1332,10 @@
                     throw new ArgumentNullException("array");
                 if (index < 0 || index > array.Length)
                     throw new ArgumentOutOfRangeException("index", "ArgumentOutOfRange_NeedNonNegNum");
-                if (array.Length - index < dictionary.Count)
+                if (array.Length - index < this.dictionary.Count)
                     throw new ArgumentException("Arg_ArrayPlusOffTooSmall");
-                int num = dictionary.count;
-                Entry[] entryArray = dictionary.entries;
+                int num = this.dictionary.count;
+                Entry[] entryArray = this.dictionary.entries;
                 for (int index1 = 0; index1 < num; ++index1)
                 {
                     if (entryArray[index1].hashCode >= 0)
@@ -1367,12 +1343,10 @@
                 }
             }
 
-
             void ICollection<TValue>.Add(TValue item)
             {
                 throw new NotSupportedException("NotSupported_ValueCollectionSet");
             }
-
 
             bool ICollection<TValue>.Remove(TValue item)
             {
@@ -1380,30 +1354,25 @@
                 return false;
             }
 
-
             void ICollection<TValue>.Clear()
             {
                 throw new NotSupportedException("NotSupported_ValueCollectionSet");
             }
 
-
             bool ICollection<TValue>.Contains(TValue item)
             {
-                return dictionary.ContainsValue(item);
+                return this.dictionary.ContainsValue(item);
             }
-
 
             IEnumerator<TValue> IEnumerable<TValue>.GetEnumerator()
             {
-                return (IEnumerator<TValue>) new Enumerator(dictionary);
+                return (IEnumerator<TValue>)new Enumerator(this.dictionary);
             }
-
 
             IEnumerator IEnumerable.GetEnumerator()
             {
-                return (IEnumerator) new Enumerator(dictionary);
+                return (IEnumerator)new Enumerator(this.dictionary);
             }
-
 
             void ICollection.CopyTo(Array array, int index)
             {
@@ -1415,24 +1384,24 @@
                     throw new ArgumentException("Arg_NonZeroLowerBound");
                 if (index < 0 || index > array.Length)
                     throw new ArgumentOutOfRangeException("index", "ArgumentOutOfRange_NeedNonNegNum");
-                if (array.Length - index < dictionary.Count)
+                if (array.Length - index < this.dictionary.Count)
                     throw new ArgumentException("Arg_ArrayPlusOffTooSmall");
-                TValue[] array1 = array as TValue[];
+                var array1 = array as TValue[];
                 if (array1 != null)
-                    CopyTo(array1, index);
+                    this.CopyTo(array1, index);
                 else
                 {
-                    object[] objArray = array as object[];
+                    var objArray = array as object[];
                     if (objArray == null)
                         throw new ArgumentException("Argument_InvalidArrayType");
-                    int num = dictionary.count;
-                    Entry[] entryArray = dictionary.entries;
+                    int num = this.dictionary.count;
+                    Entry[] entryArray = this.dictionary.entries;
                     try
                     {
                         for (int index1 = 0; index1 < num; ++index1)
                         {
                             if (entryArray[index1].hashCode >= 0)
-                                objArray[index++] = (object) entryArray[index1].value;
+                                objArray[index++] = (object)entryArray[index1].value;
                         }
                     }
                     catch (ArrayTypeMismatchException ex)
@@ -1448,41 +1417,40 @@
             [Serializable]
             public struct Enumerator : IEnumerator<TValue>, IDisposable, IEnumerator
             {
-                private DictionaryEx<TKey, TValue> dictionary;
-                private int index;
-                private int version;
-                private TValue currentValue;
+                readonly DictionaryEx<TKey, TValue> dictionary;
+                int index;
+                readonly int version;
+                TValue currentValue;
 
                 /// <summary>
                 ///     Gets the element at the current position of the enumerator.
                 /// </summary>
                 /// <returns>
-                ///     The element in the <see cref="T:System.Collections.Generic.DictionaryEx`2.ValueCollection" /> at the current position
+                ///     The element in the <see cref="T:System.Collections.Generic.DictionaryEx`2.ValueCollection" /> at the current
+                ///     position
                 ///     of the enumerator.
                 /// </returns>
                 public TValue Current
                 {
-                    [TargetedPatchingOptOut("Performance critical to inline this type of method across NGen image boundaries")]
-                    get { return currentValue; }
+                    [TargetedPatchingOptOut("Performance critical to inline this type of method across NGen image boundaries")] get { return this.currentValue; }
                 }
-
 
                 object IEnumerator.Current
                 {
                     get
                     {
-                        if (index == 0 || index == dictionary.count + 1)
+                        if (this.index == 0 || this.index == this.dictionary.count + 1)
                             throw new InvalidOperationException("InvalidOperation_EnumOpCantHappen");
-                        return (object) currentValue;
+                        return (object)this.currentValue;
                     }
                 }
 
                 internal Enumerator(DictionaryEx<TKey, TValue> dictionary)
                 {
                     this.dictionary = dictionary;
-                    version = dictionary.version;
-                    index = 0;
-                    currentValue = default(TValue);
+                    this.version = dictionary.version;
+                    this.index = 0;
+                    this.currentValue = default(TValue);
                 }
 
                 /// <summary>
@@ -1504,36 +1472,35 @@
                 /// <exception cref="T:System.InvalidOperationException">The collection was modified after the enumerator was created. </exception>
                 public bool MoveNext()
                 {
-                    if (version != dictionary.version)
+                    if (this.version != this.dictionary.version)
                         throw new InvalidOperationException("InvalidOperation_EnumFailedVersion");
-                    for (; (uint) index < (uint) dictionary.count; ++index)
+                    for (; (uint)this.index < (uint)this.dictionary.count; ++this.index)
                     {
-                        if (dictionary.entries[index].hashCode >= 0)
+                        if (this.dictionary.entries[this.index].hashCode >= 0)
                         {
-                            currentValue = dictionary.entries[index].value;
-                            ++index;
+                            this.currentValue = this.dictionary.entries[this.index].value;
+                            ++this.index;
                             return true;
                         }
                     }
-                    index = dictionary.count + 1;
-                    currentValue = default(TValue);
+                    this.index = this.dictionary.count + 1;
+                    this.currentValue = default(TValue);
                     return false;
                 }
 
-
                 void IEnumerator.Reset()
                 {
-                    if (version != dictionary.version)
+                    if (this.version != this.dictionary.version)
                         throw new InvalidOperationException("InvalidOperation_EnumFailedVersion");
-                    index = 0;
-                    currentValue = default(TValue);
+                    this.index = 0;
+                    this.currentValue = default(TValue);
                 }
             }
         }
     }
 
     public class Factory<T>
-        where T: new()
+        where T : new()
     {
         public T Create()
         {

@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace ConsoleApplication16
+﻿namespace ConsoleApplication16
 {
     /// <summary>
     ///     Optional object type.
@@ -14,10 +8,10 @@ namespace ConsoleApplication16
     {
         public MaybeStruct(T value)
         {
-            HasValue = false;
-            Value = value;
+            this.HasValue = false;
+            this.Value = value;
         }
-        
+
         /// <summary>
         ///     Gets whether an object is present.
         /// </summary>

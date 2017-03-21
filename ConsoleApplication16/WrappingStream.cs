@@ -5,13 +5,13 @@ namespace ConsoleApplication16
     using System.Threading;
     using System.Threading.Tasks;
 
-    internal class WrappingStream : Stream
+    class WrappingStream : Stream
     {
-        private readonly Stream _stream;
+        readonly Stream _stream;
 
         public WrappingStream(Stream ms)
         {
-            _stream = ms;
+            this._stream = ms;
         }
 
         public override void Flush()
@@ -20,7 +20,7 @@ namespace ConsoleApplication16
 
         public override long Seek(long offset, SeekOrigin origin)
         {
-            return _stream.Seek(offset, origin);
+            return this._stream.Seek(offset, origin);
         }
 
         public override void SetLength(long value)
@@ -30,12 +30,12 @@ namespace ConsoleApplication16
 
         public override int Read(byte[] buffer, int offset, int count)
         {
-            return _stream.Read(buffer, offset, count);
+            return this._stream.Read(buffer, offset, count);
         }
 
         public override Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
         {
-            return _stream.ReadAsync(buffer, offset, count, cancellationToken);
+            return this._stream.ReadAsync(buffer, offset, count, cancellationToken);
         }
 
         public override void Write(byte[] buffer, int offset, int count)

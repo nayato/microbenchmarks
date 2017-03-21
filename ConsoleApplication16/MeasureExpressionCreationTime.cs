@@ -3,6 +3,7 @@
     using System;
     using System.Collections.Generic;
     using System.Linq.Expressions;
+    using System.Reflection;
     using Microsoft.WindowsAzure.Storage.Table;
     using Wintellect;
 
@@ -15,15 +16,15 @@
 
             const string TransactionRowKeyPrefix = "__tx";
 
-            var queryExpressionParameter = Expression.Parameter(typeof(DynamicTableEntity));
-            var partitionKeyPropertyExpression = Expression.Property(
+            ParameterExpression queryExpressionParameter = Expression.Parameter(typeof(DynamicTableEntity));
+            MemberExpression partitionKeyPropertyExpression = Expression.Property(
                 queryExpressionParameter,
                 typeof(DynamicTableEntity).GetProperty(GetPropertyName<DynamicTableEntity>(x => x.PartitionKey)));
-            var rowKeyPropertyAccess = Expression.Property(
+            MemberExpression rowKeyPropertyAccess = Expression.Property(
                 queryExpressionParameter,
                 typeof(DynamicTableEntity).GetProperty(GetPropertyName<DynamicTableEntity>(x => x.RowKey)));
-            var stringCompareToMethodInfo = typeof(string).GetMethod("CompareTo", new[] {typeof(string)});
-            var filterTransactionRowsExpression = Expression.And(
+            MethodInfo stringCompareToMethodInfo = typeof(string).GetMethod("CompareTo", new[] { typeof(string) });
+            BinaryExpression filterTransactionRowsExpression = Expression.And(
                 Expression.GreaterThan(
                     Expression.Call(rowKeyPropertyAccess, stringCompareToMethodInfo, Expression.Constant(TransactionRowKeyPrefix)),
                     Expression.Constant(0)),
@@ -35,13 +36,13 @@
                 (partitionKey, rowKeys) =>
                 {
                     Expression eqFilter = null;
-                    foreach (var rowKey in rowKeys)
+                    foreach (string rowKey in rowKeys)
                     {
-                        var currentExpression = Expression.Equal(rowKeyPropertyAccess, Expression.Constant(rowKey));
+                        BinaryExpression currentExpression = Expression.Equal(rowKeyPropertyAccess, Expression.Constant(rowKey));
                         eqFilter = eqFilter == null ? currentExpression : Expression.Or(eqFilter, currentExpression);
                     }
 
-                    var result =
+                    BinaryExpression result =
                         Expression.And(
                             Expression.Equal(
                                 partitionKeyPropertyExpression,
@@ -54,7 +55,7 @@
 
             CodeTimer.Time(true, "prebuilt", iterations, () =>
             {
-                var exp = composeTargetedReadFilterEx("a", new[] {"1", "2"});
+                Expression<Func<DynamicTableEntity, bool>> exp = composeTargetedReadFilterEx("a", new[] { "1", "2" });
                 if (exp.Body != null)
                     ran++;
             });
@@ -66,15 +67,15 @@
 
         static long EvaluateRebuilt(string TransactionRowKeyPrefix, long ran)
         {
-            var queryExpressionParameter = Expression.Parameter(typeof(DynamicTableEntity));
-            var partitionKeyPropertyExpression = Expression.Property(
+            ParameterExpression queryExpressionParameter = Expression.Parameter(typeof(DynamicTableEntity));
+            MemberExpression partitionKeyPropertyExpression = Expression.Property(
                 queryExpressionParameter,
                 typeof(DynamicTableEntity).GetProperty(GetPropertyName<DynamicTableEntity>(x => x.PartitionKey)));
-            var rowKeyPropertyAccess = Expression.Property(
+            MemberExpression rowKeyPropertyAccess = Expression.Property(
                 queryExpressionParameter,
                 typeof(DynamicTableEntity).GetProperty(GetPropertyName<DynamicTableEntity>(x => x.RowKey)));
-            var stringCompareToMethodInfo = typeof(string).GetMethod("CompareTo", new[] {typeof(string)});
-            var filterTransactionRowsExpression = Expression.And(
+            MethodInfo stringCompareToMethodInfo = typeof(string).GetMethod("CompareTo", new[] { typeof(string) });
+            BinaryExpression filterTransactionRowsExpression = Expression.And(
                 Expression.GreaterThan(
                     Expression.Call(rowKeyPropertyAccess, stringCompareToMethodInfo, Expression.Constant(TransactionRowKeyPrefix)),
                     Expression.Constant(0)),
@@ -83,13 +84,13 @@
                     Expression.Constant(0)));
 
             Expression eqFilter = null;
-            foreach (var rowKey in new[] {"1", "2"})
+            foreach (string rowKey in new[] { "1", "2" })
             {
-                var currentExpression = Expression.Equal(rowKeyPropertyAccess, Expression.Constant(rowKey));
+                BinaryExpression currentExpression = Expression.Equal(rowKeyPropertyAccess, Expression.Constant(rowKey));
                 eqFilter = eqFilter == null ? currentExpression : Expression.Or(eqFilter, currentExpression);
             }
 
-            var result =
+            BinaryExpression result =
                 Expression.And(
                     Expression.Equal(
                         partitionKeyPropertyExpression,
@@ -97,7 +98,7 @@
                     Expression.Or(
                         eqFilter,
                         filterTransactionRowsExpression));
-            var exp = Expression.Lambda<Func<DynamicTableEntity, bool>>(result, queryExpressionParameter);
+            Expression<Func<DynamicTableEntity, bool>> exp = Expression.Lambda<Func<DynamicTableEntity, bool>>(result, queryExpressionParameter);
             if (exp.Body != null)
                 ran++;
             return ran;

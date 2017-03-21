@@ -1,29 +1,27 @@
 ﻿namespace ConsoleApplication16
 {
     using System;
-    using System.Collections.Generic;
     using System.Diagnostics.CodeAnalysis;
-    using System.Linq;
-    using System.Text;
-    using System.Threading.Tasks;
 
     public class MaybeLazy<T>
     {
-        private MaybeStruct<T> _maybe;
-        private Func<T> _func;
+        MaybeStruct<T> maybe;
+        readonly Func<T> func;
 
         public MaybeLazy(Func<T> func)
         {
-            _func = func;
+            this.func = func;
         }
 
         public T Value
         {
             get
             {
-                if (!_maybe.HasValue)
-                    _maybe = MaybeStruct.Some(_func());
-                return _maybe.Value;
+                if (!this.maybe.HasValue)
+                {
+                    this.maybe = MaybeStruct.Some(this.func());
+                }
+                return this.maybe.Value;
             }
         }
     }
@@ -50,7 +48,7 @@
         [SuppressMessage("Microsoft.Design", "CA1034:NestedTypesShouldNotBeVisible")]
         public sealed class None : Maybe<T>
         {
-            private None()
+            None()
             {
             }
 
@@ -93,7 +91,7 @@
             /// <summary>
             ///     Object stored in Some.
             /// </summary>
-            private readonly T _value;
+            readonly T _value;
 
             /// <summary>
             ///     Creates a new Some object.
@@ -101,7 +99,7 @@
             /// <param name="value">Object stored in Some.</param>
             public Some(T value)
             {
-                _value = value;
+                this._value = value;
             }
 
             /// <summary>
@@ -117,7 +115,7 @@
             /// </summary>
             public override T Value
             {
-                get { return _value; }
+                get { return this._value; }
             }
 
             /// <summary>
@@ -126,7 +124,7 @@
             /// <returns>None&lt;T&gt;(Value)</returns>
             public override string ToString()
             {
-                return "Some<" + typeof(T).Name + ">(" + (_value == null ? "null" : _value.ToString()) + ")";
+                return "Some<" + typeof(T).Name + ">(" + (this._value == null ? "null" : this._value.ToString()) + ")";
             }
         }
     }

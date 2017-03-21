@@ -2,14 +2,10 @@
 {
     using System;
     using System.Collections.Generic;
-    using System.Globalization;
     using System.IO;
     using System.IO.Compression;
-    using System.Linq;
-    using System.Runtime;
     using System.Text;
     using Wintellect;
-    using Console = System.Console;
 
     class MeasureGzippedStringSetSize
     {
@@ -22,7 +18,7 @@
             for (int i = 0; i < iterations; i++)
             {
                 time = StepTime(time);
-                var blobName = GenerateBlobName(time);
+                Tuple<Guid, byte> blobName = GenerateBlobName(time);
                 strings.Add(blobName);
             }
 
@@ -30,7 +26,7 @@
             using (var writer = new BinaryWriter(memStream, Encoding.UTF8, true))
             {
                 writer.Write(strings.Count);
-                foreach (var s in strings)
+                foreach (Tuple<Guid, byte> s in strings)
                 {
                     writer.Write(s.Item1.ToByteArray());
                     writer.Write(s.Item2);
@@ -45,13 +41,13 @@
             {
                 memStream.CopyTo(gs);
             }
-            var compressedBytes = memStream.ToArray();
+            byte[] compressedBytes = memStream.ToArray();
 
             Console.WriteLine(gzippedStream.Length);
 
             time = StepTime(time);
-            var newValue = GenerateBlobName(time);
-            
+            Tuple<Guid, byte> newValue = GenerateBlobName(time);
+
             CodeTimer.Time(true, "read/write compression", 300, () =>
             {
                 int newInstance = newValue.Item2;
@@ -65,34 +61,34 @@
                 using (var writer = new BinaryWriter(readStream, Encoding.UTF8, true))
                 {
                     bool isRegisteredAlready = false;
-                        int count = reader.ReadInt32();
-                        for (int i = 0; i < count; i++)
+                    int count = reader.ReadInt32();
+                    for (int i = 0; i < count; i++)
+                    {
+                        byte[] guidBytes = reader.ReadBytes(16);
+                        int instance = reader.ReadByte();
+                        if (instance == newInstance)
                         {
-                            var guidBytes = reader.ReadBytes(16);
-                            int instance = reader.ReadByte();
-                            if (instance == newInstance)
+                            if (new Guid(guidBytes) == newValue.Item1)
                             {
-                                if (new Guid(guidBytes) == newValue.Item1)
-                                {
-                                    isRegisteredAlready = true;
-                                    break;
-                                }
+                                isRegisteredAlready = true;
+                                break;
                             }
                         }
+                    }
 
-                        if (!isRegisteredAlready)
+                    if (!isRegisteredAlready)
+                    {
+                        if (newBytes == null)
                         {
-                            if (newBytes == null)
-                            {
-                                newBytes = newValue.Item1.ToByteArray();
-                            }
-                            readStream.Seek(0, SeekOrigin.Begin);
-                            writer.Write(count + 1);
-
-                            readStream.Seek(0, SeekOrigin.End);
-                            writer.Write(newBytes);
-                            writer.Write(newValue.Item2);
+                            newBytes = newValue.Item1.ToByteArray();
                         }
+                        readStream.Seek(0, SeekOrigin.Begin);
+                        writer.Write(count + 1);
+
+                        readStream.Seek(0, SeekOrigin.End);
+                        writer.Write(newBytes);
+                        writer.Write(newValue.Item2);
+                    }
 
                     if (!isRegisteredAlready)
                     {
@@ -119,4 +115,4 @@
             //return blobName;
         }
     }
-}   
+}
