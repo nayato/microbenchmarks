@@ -101,7 +101,7 @@
 
             MeasureTimersVsWheel.Run();
 
-            //Console.ReadLine();
+            Console.ReadLine();
         }
 
         static long MeasureHMHVsPipeline()

@@ -167,6 +167,7 @@
     <Compile Include="DictionaryWithInlineKey.cs" />
     <Compile Include="DictionaryEx.cs" />
     <Compile Include="Extensions.cs" />
+    <Compile Include="HashCode.cs" />
     <Compile Include="HashedWheelTimer.cs" />
     <Compile Include="JsonChecker.cs" />
     <Compile Include="Maybe.cs" />
@@ -205,6 +206,7 @@
     <Compile Include="TaskHelpers.cs" />
     <Compile Include="Try.cs" />
     <Compile Include="UriExtensions.cs" />
+    <Compile Include="ValueTuple.cs" />
     <Compile Include="Wintellect.cs" />
     <Compile Include="WrappingStream.cs" />
     <Compile Include="XMLLightweightParser.cs" />
